@@ -4,7 +4,7 @@ const ProductDescription: React.FC = () => {
     return (
         <div className="ring-1 ring-slate-900/10 rounded-lg">
             <div className="text-red-600">
-                <button className="medium-14 p-3 w-32 border-secondary">Description</button>
+                <button className="text-[14px] font-[500] p-3 w-32 border-secondary">Description</button>
             </div>
             <hr className="h-[1px] w-full" />
             <div className="flex flex-col gap-3 p-3">

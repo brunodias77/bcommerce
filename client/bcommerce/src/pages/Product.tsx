@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useAsyncError, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
 import { Product as ProductType } from "../types/product-type";
 import { FaCheck, FaHeart, FaStar, FaStarHalfStroke, FaTruckFast } from 'react-icons/fa6';
 import { TbShoppingBagPlus } from 'react-icons/tb';
 import ProductDescription from '../components/ProductDescription';
+import ProductFeatures from '../components/ProductFeatures';
+import RelatedProducts from '../components/RelatedProducts';
 
 const Product: React.FC = () => {
     const { productId } = useParams();
@@ -89,10 +91,10 @@ const Product: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-x-4 ">
-                            <button className="btn-secondary !rounded-lg sm:w-1/2 flex items-center justify-center gap-x-2 capitalize cursor-pointer hover:brightness-125">
+                            <button className="btn-secondary !rounded-lg sm:w-1/2 flex items-center justify-center gap-x-2 capitalize cursor-pointer hover:brightness-50">
                                 Add to Cart <TbShoppingBagPlus />
                             </button>
-                            <button onClick={() => { }} className="btn-white !rounded-lg !py-3.5">
+                            <button onClick={() => { }} className="btn-white !rounded-lg !py-3.5 hover:brightness-50 cursor-pointer">
                                 <FaHeart />
                             </button>
                         </div>
@@ -108,6 +110,9 @@ const Product: React.FC = () => {
                     </div>
                 </div>
                 <ProductDescription />
+                <ProductFeatures />
+                <RelatedProducts category={product.category} />
+
                 {/* <ProductDescription />
                 <ProductFeatures />
                 <RelatedProducts category={product.category} /> */}
