@@ -4,6 +4,7 @@ import Search from "../components/Search";
 import { ShopContext } from "../context/ShopContext";
 import { Product } from "../types/product-type";
 import { ChevronDown } from "lucide-react";
+import Item from "../components/Item";
 
 /**
  * @summary Componente que exibe a coleção de produtos, incluindo filtros, ordenação e paginação.
@@ -131,7 +132,7 @@ const Collection: React.FC = () => {
                             </button>
 
                             {dropdownOpen && (
-                                <ul className="absolute w-full bg-white border border-slate-300 shadow-md mt-1 rounded-lg overflow-hidden z-10">
+                                <ul className="absolute w-full bg-white border border-slate-300 shadow-md mt-1 rounded-lg overflow-hidden z-50">
                                     {["relevant", "low", "high"].map((option) => (
                                         <li
                                             key={option}
@@ -155,10 +156,11 @@ const Collection: React.FC = () => {
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-6">
                         {getPaginatedProducts().length > 0 ? (
                             getPaginatedProducts().map((product) => (
-                                <div key={product._id} className="border p-4 rounded-md">
-                                    <p>{product.name}</p>
-                                    <p>${product.price}</p>
-                                </div>
+                                <Item {...product} />
+                                // <div key={product._id} className="border p-4 rounded-md">
+                                //     <p>{product.name}</p>
+                                //     <p>${product.price}</p>
+                                // </div>
                             ))
                         ) : (
                             <p>No products found for selected filters</p>

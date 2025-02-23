@@ -14,13 +14,12 @@ const Home: React.FC = () => {
         <>
             <Hero />
             <Features />
-            <NewArrivals  />
-            <PopularProducts  />
+            <NewArrivals />
+            <PopularProducts />
             <Banner />
             <About />
             <Blog />
             <NewLatter />
-            <Footer />
         </>
     )
 }

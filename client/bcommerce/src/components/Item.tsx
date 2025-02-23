@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "../types/product-type";
 
-const Item: React.FC<Product> = ({ image, name, description, price, category }) => {
+const Item: React.FC<Product> = ({ _id, image, name, description, price, category }) => {
     const [hovered, setHovered] = useState(false);
     return (
         <div className="overflow-hidden">
             <Link
-                to={'/'}
+                to={`/product/${_id}`}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 className="flex items-center justify-center p-2 bg-[#f5f5f5] overflow-hidden relative"
