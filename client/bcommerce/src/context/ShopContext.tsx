@@ -8,7 +8,7 @@ interface ShopContextType {
     products: Product[];
     search: string;
     setSearch: React.Dispatch<React.SetStateAction<string>>;
-    currency: number;
+    currency: string;
 }
 
 // Criando o contexto com valor inicial padrão
@@ -16,7 +16,7 @@ export const ShopContext = createContext<ShopContextType>({
     products,
     search: "",
     setSearch: () => { }, // Função vazia apenas para inicialização
-    currency: 0,
+    currency: "",
 });
 
 interface ShopContextProviderProps {
@@ -26,7 +26,7 @@ interface ShopContextProviderProps {
 const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) => {
     const [search, setSearch] = useState("");
     const navigate = useNavigate();
-    const currency = 10;
+    const currency = "$";
 
 
     const value: ShopContextType = { products, search, setSearch, currency };
