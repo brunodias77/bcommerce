@@ -1,6 +1,6 @@
 import React from 'react'
 import cards from "../assets/cards.png"
-import logo from "../assets/logo/logo-separado.svg"
+import logo from "../assets/logo/logo.svg"
 const Footer: React.FC = () => {
     return (
         <footer>
@@ -104,7 +104,7 @@ const Footer: React.FC = () => {
                 </div>
             </div>
             {/* copyrights */}
-            <p className="max-padd-container text-center bg-primary text-gray-500  text-[14px] font-[500] py-2 px-8 rounded flexBetween mt-6">
+            <p className="text-center bg-primary text-gray-500  text-[14px] font-[500] py-2 px-8 rounded flexBetween mt-6">
                 <span>2025 @bdias.dev</span>
                 <span> All rights reserved</span>
             </p>
