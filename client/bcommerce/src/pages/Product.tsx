@@ -10,7 +10,13 @@ import RelatedProducts from '../components/RelatedProducts';
 
 const Product: React.FC = () => {
     const { productId } = useParams();
-    const { products, currency } = useContext(ShopContext);
+    const shopContext = useContext(ShopContext);
+    if (!shopContext) {
+        throw new Error("ShopContext deve estar dentro de um ShopContextProvider");
+    }
+    const { products, currency, addToCart } = shopContext;
+
+    // const { products, currency } = useContext(ShopContext);
     const [product, setProduct] = useState<ProductType | null>(null);
     const [image, setImage] = useState("");
     const [color, setColor] = useState("");
@@ -91,10 +97,10 @@ const Product: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-x-4 ">
-                            <button className="btn-secondary !rounded-lg sm:w-1/2 flex items-center justify-center gap-x-2 capitalize cursor-pointer hover:brightness-50">
+                            <button onClick={() => addToCart(product._id, color)} className="btn-secondary !rounded-lg sm:w-1/2 flex items-center justify-center gap-x-2 capitalize cursor-pointer hover:brightness-50">
                                 Add to Cart <TbShoppingBagPlus />
                             </button>
-                            <button onClick={() => { }} className="btn-white !rounded-lg !py-3.5 hover:brightness-50 cursor-pointer">
+                            <button className="btn-white !rounded-lg !py-3.5 hover:brightness-50 cursor-pointer">
                                 <FaHeart />
                             </button>
                         </div>

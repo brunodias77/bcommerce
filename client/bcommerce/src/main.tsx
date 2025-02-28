@@ -6,6 +6,7 @@ import ShopContextProvider from './context/ShopContext.tsx'
 import Footer from './components/Footer.tsx'
 
 
+
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <ShopContextProvider>

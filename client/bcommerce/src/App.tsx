@@ -6,10 +6,12 @@ import Collection from './pages/Collection';
 import Blog from './pages/Blog';
 import Cart from './pages/Cart';
 import Product from './pages/Product';
+import { ToastContainer } from 'react-toastify';
 
 const App: React.FC = () => {
   return (
     <main className='overflow-hidden text-tertiary'>
+      <ToastContainer aria-label={undefined} />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
