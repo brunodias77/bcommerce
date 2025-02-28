@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { use, useState } from 'react'
+import React, { use, useContext, useState } from 'react'
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import { FaBars, FaBarsStaggered } from 'react-icons/fa6';
@@ -8,9 +8,18 @@ import { FaBars, FaBarsStaggered } from 'react-icons/fa6';
 import { IoCartOutline } from "react-icons/io5";
 import { IoPersonOutline } from "react-icons/io5";
 import logo from "../assets/logo/logo.svg";
+import { ShopContext } from '../context/ShopContext';
 
 const Header: React.FC = () => {
     const [menuOpened, setMenuOpened] = useState(false);
+    const shopContext = useContext(ShopContext);
+
+    if (!shopContext) {
+        throw new Error("ShopContext deve ser usado dentro de um ShopContextProvider");
+    }
+
+    const { getCartCount } = shopContext;
+
     const toggleMenu = () => setMenuOpened((prev) => !prev);
     return (
         <header className='max-padd-container w-full mb-2'>
@@ -45,7 +54,9 @@ const Header: React.FC = () => {
                     {/* CART */}
                     <Link to={'/cart'} className='flex relative'>
                         <IoCartOutline size={20} />
-                        <span className='bg-[#FEC857] text-black text-[12px] font-semibold absolute -top-3.5 -right-2 flex items-center justify-center w-4 h-4 rounded-full shadow-md'>0</span>
+                        <span className='bg-[#FEC857] text-black text-[12px] font-semibold absolute -top-3.5 -right-2 flex items-center justify-center w-4 h-4 rounded-full shadow-md'>
+                            {getCartCount()}
+                        </span>
                     </Link>
                     {/* USER PROFILE */}
                     <Link to={'/perfil'} className='group relative'>

@@ -156,7 +156,7 @@ const Collection: React.FC = () => {
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-6">
                         {getPaginatedProducts().length > 0 ? (
                             getPaginatedProducts().map((product) => (
-                                <Item {...product} />
+                                <Item key={product._id} {...product} />
                                 // <div key={product._id} className="border p-4 rounded-md">
                                 //     <p>{product.name}</p>
                                 //     <p>${product.price}</p>
