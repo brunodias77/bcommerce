@@ -14,7 +14,7 @@ interface ProductData {
 }
 
 const Cart: React.FC = () => {
-    const { products, cartItems, getCartCount, currency } = useContext(ShopContext);
+    const { products, cartItems, getCartCount, currency, updateQuantities } = useContext(ShopContext);
     const [cartData, setCartData] = useState<ProductData[]>([]);
     const [quantity, setQuantity] = useState<Record<string, number>>({});
 
@@ -46,6 +46,22 @@ const Cart: React.FC = () => {
         setQuantity(initialQuantities);
     }, [cartItems, products]); // 🛠 Garante atualização imediata
 
+    const increment = (id: number, color: string) => {
+        const key = `${id}-${color}`;
+        const newValue = quantity[key] + 1;
+        setQuantity((prev) => ({ ...prev, [key]: newValue }));
+        updateQuantities(id.toString(), color, newValue);
+    }
+
+    const decrement = (id: number, color: string) => {
+        const key = `${id}-${color}`;
+        if (quantity[key] > 1) {
+            const newValue = quantity[key] - 1;
+            setQuantity((prev) => ({ ...prev, [key]: newValue }));
+            updateQuantities(id.toString(), color, newValue);
+        }
+    }
+
     return (
         <section >
             <div className='bg-primary mb-16'>
@@ -69,16 +85,16 @@ const Cart: React.FC = () => {
                                         <div className='flex flex-col w-full'>
                                             <div className='flex items-center justify-between'>
                                                 <h5 className='h5 !my-0 line-clamp-1'>{productData?.name}</h5>
-                                                <FaRegWindowClose className='cursor-pointer text-secondary' />
+                                                <FaRegWindowClose onClick={() => updateQuantities(item._id, item.color, 0)} className='cursor-pointer text-secondary' />
                                             </div>
                                             <p className='text-[14px] font-[700] my-0.5'>{item.color}</p>
                                             <div className='flex items-center justify-between'>
                                                 <div className='flex items-center ring-1 ring-slate-900/5 rounded-full overflow-hidden bg-primary'>
-                                                    <button className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
+                                                    <button onClick={() => decrement(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
                                                         <FaMinus className='text-xs cursor-pointer' />
                                                     </button>
                                                     <p className='px-3'>{quantity[key]}</p>
-                                                    <button className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
+                                                    <button onClick={() => increment(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
                                                         <FaPlus className='text-xs cursor-pointer' />
                                                     </button>
                                                 </div>
@@ -102,8 +118,7 @@ const Cart: React.FC = () => {
                 </div>
             </div>
 
-
-        </section>
+        </section >
     );
 };
 
