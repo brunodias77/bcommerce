@@ -14,7 +14,7 @@ interface ProductData {
 }
 
 const Cart: React.FC = () => {
-    const { products, cartItems, getCartCount, currency, updateQuantities } = useContext(ShopContext);
+    const { products, cartItems, getCartCount, currency, updateQuantities, navigate } = useContext(ShopContext);
     const [cartData, setCartData] = useState<ProductData[]>([]);
     const [quantity, setQuantity] = useState<Record<string, number>>({});
 
@@ -112,7 +112,7 @@ const Cart: React.FC = () => {
                     <div className='flex my-20'>
                         <div className='w-full sm:w-[450px]'>
                             <CartTotal />
-                            <button className='btn-secondary mt-7'>Proceed to checkout</button>
+                            <button onClick={() => navigate('/palce-order')} className='btn-secondary mt-7'>Proceed to checkout</button>
                         </div>
                     </div>
                 </div>

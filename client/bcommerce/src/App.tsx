@@ -1,13 +1,14 @@
 import React from 'react';
 import Header from './components/Header';
-import { Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import Collection from './pages/Collection';
 import Blog from './pages/Blog';
 import Cart from './pages/Cart';
 import Product from './pages/Product';
-import { ToastContainer } from 'react-toastify';
 import Footer from './components/Footer';
+import PlaceOrder from './pages/PlaceOrder';
+import { ToastContainer } from 'react-toastify';
+import { Route, Routes } from 'react-router-dom';
 
 const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const App: React.FC = () => {
           <Route path="/blog" element={<Blog />} />
           <Route path='/product/:productId' element={<Product />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/place-order" element={<PlaceOrder />} />
         </Routes>
       </div>
       <Footer />
