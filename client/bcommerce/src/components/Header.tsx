@@ -22,8 +22,11 @@ const Header: React.FC = () => {
 
     const toggleMenu = () => setMenuOpened((prev) => !prev);
     return (
-        <header className='max-padd-container w-full mb-2'>
-            <div className='flex items-center justify-between'>
+        <header className=' w-full mb-2'>
+            <div className='w-full bg-[#F8F8FB]'>
+                infos
+            </div>
+            <div className='max-padd-container flex items-center justify-between'>
                 {/*LOGO*/}
                 <Link to={'/'} className='flex flex-1 '>
                     <img src={logo} alt="logo da empresa" className='max-w-[60px] max-h-[60px] pt-2' />
