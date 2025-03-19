@@ -9,7 +9,9 @@ import { IoCartOutline } from "react-icons/io5";
 import { IoPersonOutline } from "react-icons/io5";
 import logo from "../assets/logo/logo.svg";
 import { ShopContext } from '../context/ShopContext';
-
+import Phone from '../assets/icons/phone.svg';
+import Email from '../assets/icons/email.svg';
+import Button from './Button';
 const Header: React.FC = () => {
     const [menuOpened, setMenuOpened] = useState(false);
     const shopContext = useContext(ShopContext);
@@ -22,9 +24,30 @@ const Header: React.FC = () => {
 
     const toggleMenu = () => setMenuOpened((prev) => !prev);
     return (
-        <header className=' w-full mb-2'>
-            <div className='w-full bg-[#F8F8FB]'>
-                infos
+        <header className=' w-full'>
+            <div className='w-full bg-[#F8F8FB] p-0'>
+                <div className='mx-auto max-w-[1440px] px-6 py-1 lg:px-12 flex items-center justify-between'>
+                    <div className='flex items-center justify-center gap-x-2'>
+                        <div className='flex items-center justify-center gap-x-2'>
+                            <img src={Phone} alt="icone de um telefone" />
+                            <span className='text-[#777777] text-xs'>(14) 3415-2890</span>
+                        </div>
+                        <div className='flex items-center justify-center gap-x-2'>
+                            <img src={Email} alt="icone de um telefone" />
+                            <span className='text-[#777777] text-xs'>brunohenriqueadias@gmail.com</span>
+                        </div>
+                    </div>
+                    
+                    <div className='flex items-center justify-center gap-x-2'>
+                        <span className='flex items-center justify-center gap-x-1 text-[#777777] text-xs'>Produtos com ate <div className='text-[15px] font-bold text-[#FEC857]' >50% OFF</div></span>
+                    </div>
+
+                    <div>
+                        <Button className='text-sm text-[#777777]' variant='secondary'>
+                            <span className='text-sm font-bold'>APROVEITE</span>
+                        </Button>
+                    </div>
+                </div>
             </div>
             <div className='max-padd-container flex items-center justify-between'>
                 {/*LOGO*/}

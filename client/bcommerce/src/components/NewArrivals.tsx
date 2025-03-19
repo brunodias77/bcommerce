@@ -6,6 +6,7 @@ import { Autoplay } from 'swiper/modules';
 import { Product } from '../types/product-type';
 import { ShopContext } from '../context/ShopContext';
 import 'swiper/css';
+import ProductCard from './ProductCard';
 
 const NewArrivals: React.FC = () => {
 
