@@ -3,8 +3,6 @@ import React, { use, useContext, useState } from 'react'
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import { FaBars, FaBarsStaggered } from 'react-icons/fa6';
-//import { TbUserCircle } from 'react-icons/tb';
-//import { RiUserLine } from 'react-icons/ri';
 import { IoCartOutline } from "react-icons/io5";
 import { IoPersonOutline } from "react-icons/io5";
 import logo from "../assets/logo/logo.svg";
@@ -26,28 +24,34 @@ const Header: React.FC = () => {
     return (
         <header className=' w-full'>
             <div className='w-full bg-[#F8F8FB] p-0'>
-                <div className='mx-auto max-w-[1440px] px-6 py-1 lg:px-12 flex items-center justify-between'>
+                <div className='relative mx-auto max-w-[1440px] px-6 py-1 lg:px-12 flex items-center justify-between'>
+                    {/* Esquerda */}
                     <div className='flex items-center justify-center gap-x-2'>
                         <div className='flex items-center justify-center gap-x-2'>
                             <img src={Phone} alt="icone de um telefone" />
                             <span className='text-[#777777] text-xs'>(14) 3415-2890</span>
                         </div>
-                        <div className='flex items-center justify-center gap-x-2'>
+                        <div className='hidden lg:flex items-center justify-center gap-x-2'>
                             <img src={Email} alt="icone de um telefone" />
                             <span className='text-[#777777] text-xs'>brunohenriqueadias@gmail.com</span>
                         </div>
                     </div>
-                    
-                    <div className='flex items-center justify-center gap-x-2'>
-                        <span className='flex items-center justify-center gap-x-1 text-[#777777] text-xs'>Produtos com ate <div className='text-[15px] font-bold text-[#FEC857]' >50% OFF</div></span>
+
+                    {/* Centro */}
+                    <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'>
+                        <div className='flex items-center justify-center gap-x-1 text-[#777777] text-xs'>
+                            Produtos com até <div className='text-[15px] font-bold text-[#FEC857]'>50% OFF</div>
+                        </div>
                     </div>
 
+                    {/* Direita */}
                     <div>
-                        <Button className='text-sm text-[#777777]' variant='secondary'>
+                        <Button className='text-sm text-[#777777]' variant='secondary' size='small'>
                             <span className='text-sm font-bold'>APROVEITE</span>
                         </Button>
                     </div>
                 </div>
+
             </div>
             <div className='max-padd-container flex items-center justify-between'>
                 {/*LOGO*/}

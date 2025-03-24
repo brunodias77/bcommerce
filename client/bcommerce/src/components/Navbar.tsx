@@ -9,10 +9,10 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ containerStyles = "", onClick }) => {
     const navLinks = [
-        { path: '/', title: 'Home' },
-        { path: '/collection', title: 'Collection' },
+        { path: '/', title: 'início' },
+        { path: '/collection', title: 'Coleções' },
         { path: '/blog', title: 'Blog' },
-        { path: 'mailto:brunohenriqueadias@gmail.com', title: 'Contact' }, // Corrigido mailto:
+        { path: 'mailto:brunohenriqueadias@gmail.com', title: 'Contato' }, // Corrigido mailto:
     ];
 
     return (

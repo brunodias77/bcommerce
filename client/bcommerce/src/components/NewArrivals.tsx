@@ -21,7 +21,7 @@ const NewArrivals: React.FC = () => {
 
     return (
         <section className='max-padd-container pt-16'>
-            <Title title='New' subtitle=' Arrivals' content='Discover the best deals on top-quality products, Crafted
+            <Title title='Novos' subtitle=' Produtos' content='Discover the best deals on top-quality products, Crafted
             to elevate your everyday experience.' titleStyles='pb-1' pStyles='!block' styles='!block !pb-10'
             />
             {/* CONTAINER */}

@@ -13,7 +13,7 @@ const PopularProducts = () => {
     }, []);
     return (
         <section className='max-padd-container py-16'>
-            <Title title='Popular' subtitle=' Products' content='Discover the best deals on top-quality products, Crafted
+            <Title title='Produtos' subtitle=' Populares' content='Discover the best deals on top-quality products, Crafted
 to elevate your everyday experience.' titleStyles='pb-1' pStyles='!block' styles='!block !pb-10'
             />
             {/*CONTAINER*/}

@@ -3,6 +3,7 @@ import Search from "../components/Search";
 import { ShopContext } from "../context/ShopContext";
 import { ChevronDown } from "lucide-react";
 import Item from "../components/Item";
+import ProductCard from "../components/ProductCard";
 
 /**
  * @summary Componente que exibe a coleção de produtos, incluindo filtros, ordenação e paginação.
@@ -142,7 +143,7 @@ const Collection: React.FC = () => {
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-6">
                         {paginatedProducts.length > 0 ? (
                             paginatedProducts.map((product) => (
-                                <Item key={product._id} {...product} />
+                                <ProductCard key={product._id} {...product} />
                             ))
                         ) : (
                             <p>No products found for selected filters</p>

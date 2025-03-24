@@ -1,10 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
 @import "tailwindcss";
+
+* {
+  font-family: "JetBrains Mono", monospace;
+}
 
 @theme {
   --color-primary: #f4f4f7;
-  --color-secondary: #222529;
+  --color-secondary: #777777;
   --color-tertiary: #222529;
   --color-black-1000: #000000;
   --color-gray-10: #eeeeee;
@@ -12,6 +15,10 @@
   --color-gray-30: #7b7b7b;
   --color-gray-50: #585858;
   --color-gray-90: #141414;
+  --color-yellow-primary: #fec857;
+  --color-yellow-primary-hover: #e0b84f;
+  --text-color-primary: #111827;
+  --text-color-secondary: #777777;
   --breakpoint-xs: 400px;
   --breakpoint-3xl: 1680px;
   --breakpoint-4xl: 2200px;
@@ -40,6 +47,18 @@
   background: #ccc;
 }
 
+.text-color-primary {
+  color: var(--text-color-primary);
+}
+.text-color-secondary {
+  color: var(--text-color-secondary);
+}
+.bg-yellow-primary {
+  background-color: var(--color-yellow-primary);
+}
+.bg-yellow-primary:hover {
+  background-color: var(--color-yellow-primary-hover);
+}
 .shadows {
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 }

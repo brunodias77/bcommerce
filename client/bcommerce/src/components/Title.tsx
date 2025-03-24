@@ -12,7 +12,7 @@ interface TitleProps {
 const Title: React.FC<TitleProps> = ({ title, subtitle, content, styles, titleStyles, pStyles }) => {
     return (
         <div className={`${styles} pb-1`}>
-            <h2 className={`${titleStyles} text-[25px] leading-tight md:text-[35px] md:leading-[1.3] mb-4 font-bold`}>
+            <h2 className={`${titleStyles} text-primary text-[25px] leading-tight md:text-[35px] md:leading-[1.3] mb-4 font-bold`}>
                 {title}
                 <span className='text-secondary !font-light underline'>{subtitle}</span>
             </h2>

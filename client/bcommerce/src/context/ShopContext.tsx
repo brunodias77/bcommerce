@@ -22,6 +22,8 @@ export interface ShopContextType {
     getCartCount: () => number;
     getCartAmount: () => number;
     navigate: ReturnType<typeof useNavigate>;
+    aplicarCupom: (codigo: string) => boolean;
+    cupomDesconto: number;
 }
 
 type CartAction =
@@ -58,11 +60,15 @@ const cartReducer = (state: CartItems, action: CartAction): CartItems => {
             return state;
     }
 };
+
+
 export const ShopContext = createContext<ShopContextType>({} as ShopContextType);
 
 const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) => {
     const [search, setSearch] = React.useState("");
     const [cartItems, dispatch] = useReducer(cartReducer, initialCartState);
+    const [cupomDesconto, setCupomDesconto] = React.useState<number>(0);
+
     const navigate = useNavigate();
     const currency = "$";
     const delivery_charges = 10;
@@ -96,6 +102,18 @@ const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) =
         }, 0);
     }, [cartItems]);
 
+    const aplicarCupom = (codigo: string) => {
+        if (codigo.toLowerCase() === 'desconto10') {
+            setCupomDesconto(0.1); // 10%
+            toast.success('Cupom aplicado com sucesso! ✅');
+            return true;
+        } else {
+            setCupomDesconto(0);
+            toast.error('Cupom inválido! ❌');
+            return false;
+        }
+    };
+
     // 🎯 Log do carrinho para depuração
     useEffect(() => {
         console.log("Carrinho atualizado no context:", cartItems);
@@ -113,6 +131,8 @@ const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) =
         getCartCount,
         getCartAmount,
         navigate,
+        aplicarCupom,
+        cupomDesconto
     };
     return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };

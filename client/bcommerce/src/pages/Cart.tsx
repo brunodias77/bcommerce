@@ -68,53 +68,57 @@ const Cart: React.FC = () => {
                 <div className='max-padd-container py-10'>
                     {/* TITLE */}
                     <div className='flex items-center justify-start gap-x-4'>
-                        <Title title='Cart' subtitle=' List' titleStyles='h3' />
+                        <Title title='Carrinho' subtitle=' De Compras' titleStyles='h3' />
                         <h5 className='text-[15px] font-[500] text-gray-30 relative bottom-1.5'>({getCartCount()} Items)</h5>
                     </div>
                     {/* CONTAINER */}
-                    <div className='mt-6'>
-                        {cartData.map((item, index) => {
-                            const productData = products.find((product) => product._id === item._id);
-                            const key = `${item._id}-${item.color}`;
-                            return (
-                                <div key={key} className='rounded-lg bg-white mb-3 p-2'>
-                                    <div className='flex items-center gap-x-3'>
-                                        <div className='flex items-start gap-6'>
-                                            <img src={productData?.image[0]} alt="imagem do produto no carrinho de compras" className='w-20 sm:w-18 rounded' />
-                                        </div>
-                                        <div className='flex flex-col w-full'>
-                                            <div className='flex items-center justify-between'>
-                                                <h5 className='h5 !my-0 line-clamp-1'>{productData?.name}</h5>
-                                                <FaRegWindowClose onClick={() => updateQuantities(item._id, item.color, 0)} className='cursor-pointer text-secondary' />
+                    <div className='grid grid-cols-1 md:grid-cols-[1fr_450px] gap-4 my-10'>
+                        <div className='w-full'>
+                            {cartData.map((item, index) => {
+                                const productData = products.find((product) => product._id === item._id);
+                                const key = `${item._id}-${item.color}`;
+                                return (
+                                    <div key={key} className='rounded-lg bg-white mb-3 p-2'>
+                                        <div className='flex items-center gap-x-3'>
+                                            <div className='flex items-start gap-6'>
+                                                <img src={productData?.image[0]} alt="imagem do produto no carrinho de compras" className='w-20 sm:w-18 rounded' />
                                             </div>
-                                            <p className='text-[14px] font-[700] my-0.5'>{item.color}</p>
-                                            <div className='flex items-center justify-between'>
-                                                <div className='flex items-center ring-1 ring-slate-900/5 rounded-full overflow-hidden bg-primary'>
-                                                    <button onClick={() => decrement(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
-                                                        <FaMinus className='text-xs cursor-pointer' />
-                                                    </button>
-                                                    <p className='px-3'>{quantity[key]}</p>
-                                                    <button onClick={() => increment(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
-                                                        <FaPlus className='text-xs cursor-pointer' />
-                                                    </button>
+                                            <div className='flex flex-col w-full'>
+                                                <div className='flex items-center justify-between'>
+                                                    <h5 className='h5 !my-0 line-clamp-1'>{productData?.name}</h5>
+                                                    <FaRegWindowClose onClick={() => updateQuantities(item._id, item.color, 0)} className='cursor-pointer text-secondary' />
                                                 </div>
-                                                <h4 className='h4'>
-                                                    {currency}{productData?.price}
-                                                </h4>
+                                                <p className='text-[14px] font-[700] my-0.5'>{item.color}</p>
+                                                <div className='flex items-center justify-between'>
+                                                    <div className='flex items-center ring-1 ring-slate-900/5 rounded-full overflow-hidden bg-primary'>
+                                                        <button onClick={() => decrement(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
+                                                            <FaMinus className='text-xs cursor-pointer' />
+                                                        </button>
+                                                        <p className='px-3'>{quantity[key]}</p>
+                                                        <button onClick={() => increment(Number(item._id), item.color)} className='p-1.5 bg-white text-secondary rounded-full shadow-md'>
+                                                            <FaPlus className='text-xs cursor-pointer' />
+                                                        </button>
+                                                    </div>
+                                                    <h4 className='h4'>
+                                                        {currency}{productData?.price}
+                                                    </h4>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    <div className='flex my-20'>
-                        <div className='w-full sm:w-[450px]'>
-                            <CartTotal />
-                            <button onClick={() => navigate('/place-order')} className='btn-secondary mt-7'>Proceed to checkout</button>
+                                )
+                            })}
+                        </div>
+                        <div className='flex border border-gray-200 p-4 rounded-md'>
+                            <div className='w-full sm:w-[450px]'>
+                                <CartTotal />
+                                <button onClick={() => navigate('/place-order')} className='bg-[#fec857] text-[14px] font-[500]   text-white px-7 py-2.5 rounded-full mt-7'>Proceed to checkout</button>
+                            </div>
                         </div>
                     </div>
+
+
+
                 </div>
             </div>
 

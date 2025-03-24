@@ -18,7 +18,7 @@ const Button: React.FC<ButtonProps> = ({
     disabled,
     ...buttonProps
 }) => {
-    const baseClasses = "py-2 px-4 rounded focus:outline-none transition transform active:scale-95 flex items-center justify-center";
+    const baseClasses = "py-1 px-2 rounded focus:outline-none transition transform active:scale-95 flex items-center justify-center";
     const variantClasses = {
         primary: "bg-[#f4f4f7] text-white hover:brightness-90",
         secondary: "bg-[#FEC857] text-black  hover:bg-gray-600",

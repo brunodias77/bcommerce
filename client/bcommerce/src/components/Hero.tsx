@@ -4,7 +4,7 @@ import { FaArrowRightLong } from 'react-icons/fa6';
 
 const Hero: React.FC = () => {
     return (
-        <section className='max-padd-container '>
+        <section className='mx-auto max-w-[1440px] px-6 lg:px-12'>
             <div className='grid grid-cols-2 bg-hero bg-cover bg-center bg-no-repeat rounded-2xl h-[633px]'>
                 {/* LEFT SIDE */}
                 <div className='place-content-end max-xs:min-w-80'>

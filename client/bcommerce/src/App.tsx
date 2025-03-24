@@ -27,18 +27,6 @@ const App: React.FC = () => {
       </div>
       <Footer />
     </main>
-    // <main className='overflow-hidden text-tertiary'>
-    //   <ToastContainer aria-label={undefined} />
-    //   <Header />
-    //   <Routes>
-    //     <Route path="/" element={<Home />} />
-    //     <Route path="/collection" element={<Collection />} />
-    //     <Route path="/blog" element={<Blog />} />
-    //     <Route path='/product/:productId' element={<Product />} />
-    //     <Route path="/cart" element={<Cart />} />
-    //   </Routes>
-    //   <Footer />
-    // </main>
   );
 };
 
