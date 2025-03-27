@@ -6,6 +6,7 @@ import Title from '../components/Title';
 import { FaRegWindowClose } from 'react-icons/fa';
 import { FaMinus, FaPlus, } from 'react-icons/fa6';
 import CartTotal from '../components/CartTotal';
+import Button from '../components/Button';
 
 interface ProductData {
     _id: string;
@@ -109,10 +110,17 @@ const Cart: React.FC = () => {
                                 )
                             })}
                         </div>
-                        <div className='flex border border-gray-200 p-4 rounded-md'>
+                        <div className='flex border border-gray-200 p-10 rounded-md'>
                             <div className='w-full sm:w-[450px]'>
                                 <CartTotal />
-                                <button onClick={() => navigate('/place-order')} className='bg-[#fec857] text-[14px] font-[500]   text-white px-7 py-2.5 rounded-full mt-7'>Proceed to checkout</button>
+                                <Button
+                                    onClick={() => navigate('/cart/address')}
+                                    variant='primary'
+                                    size="medium"
+                                    className="text-[#ffc601] font-medium text-sm px-7 py-2.5 rounded-full mt-7 cursor-pointer"
+                                >
+                                    Continuar a compra
+                                </Button>
                             </div>
                         </div>
                     </div>

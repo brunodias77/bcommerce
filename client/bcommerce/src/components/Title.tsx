@@ -14,7 +14,7 @@ const Title: React.FC<TitleProps> = ({ title, subtitle, content, styles, titleSt
         <div className={`${styles} pb-1`}>
             <h2 className={`${titleStyles} text-primary text-[25px] leading-tight md:text-[35px] md:leading-[1.3] mb-4 font-bold`}>
                 {title}
-                <span className='text-secondary !font-light underline'>{subtitle}</span>
+                <span className='text-[#2D2926] !font-light underline'>{subtitle}</span>
             </h2>
             <p className={`${pStyles} hidden`}>{content}</p>
         </div>

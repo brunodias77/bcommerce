@@ -46,8 +46,8 @@ const Header: React.FC = () => {
 
                     {/* Direita */}
                     <div>
-                        <Button className='text-sm text-[#777777]' variant='secondary' size='small'>
-                            <span className='text-sm font-bold'>APROVEITE</span>
+                        <Button className='text-sm' variant='secondary' size='small'>
+                            <span className='text-sm font-bold text-white '>APROVEITE</span>
                         </Button>
                     </div>
                 </div>
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
                     {/* CART */}
                     <Link to={'/cart'} className='flex relative'>
                         <IoCartOutline size={20} />
-                        <span className='bg-[#FEC857] text-black text-[12px] font-semibold absolute -top-3.5 -right-2 flex items-center justify-center w-4 h-4 rounded-full shadow-md'>
+                        <span className='bg-[#FEC857]  text-black text-[12px] font-semibold absolute -top-3.5 -right-2 flex items-center justify-center w-4 h-4 rounded-full shadow-md'>
                             {getCartCount()}
                         </span>
                     </Link>
