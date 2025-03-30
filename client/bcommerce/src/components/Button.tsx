@@ -19,15 +19,15 @@ const Button: React.FC<ButtonProps> = ({
     disabled,
     ...buttonProps
 }) => {
-    const baseClasses = "py-1 px-2 rounded cursor-pointer focus:outline-none transition transform active:scale-95 flex items-center justify-center";
+    const baseClasses = " rounded cursor-pointer focus:outline-none transition transform active:scale-95 flex items-center justify-center";
     const variantClasses = {
         primary: "bg-[#2D2926] text-white hover:brightness-50",
         secondary: "bg-[#FEC857] text-black  hover:brightness-90",
     };
     const sizeClasses = {
-        small: "text-sm",
-        medium: "text-base",
-        large: "text-lg",
+        small: "py-1 px-2 ",
+        medium: "py-2 px-4 ",
+        large: "py-4 px-8 ",
     };
 
     return (

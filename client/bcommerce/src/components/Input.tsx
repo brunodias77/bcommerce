@@ -1,29 +1,34 @@
 import React from 'react';
 
-type InputProps = {
-  label?: string;
-  icon?: React.ReactNode;
-  inputClassName?: string;
-  wrapperClassName?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>;
+interface InputProps {
+    id: string;
+    label: string;
+    type?: string;
+    placeholder?: string;
+    required?: boolean;
+}
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  icon,
-  inputClassName = '',
-  wrapperClassName = '',
-  ...props
+const Input: React.FC<InputProps> = ({
+    id,
+    label,
+    type = 'text',
+    placeholder,
+    required = false,
 }) => {
-  return (
-    <div className={`flex flex-col gap-1 ${wrapperClassName}`}>
-      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
-      <div className={`flex items-center border border-gray-300 rounded-md px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-blue-500`}>
-        {icon && <span className="mr-2 text-gray-500">{icon}</span>}
-        <input
-          className={`w-full outline-none bg-transparent text-gray-800 placeholder-gray-400 ${inputClassName}`}
-          {...props}
-        />
-      </div>
-    </div>
-  );
+    return (
+        <div>
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+                {label}
+            </label>
+            <input
+                type={type}
+                id={id}
+                required={required}
+                placeholder={placeholder}
+                className="w-full p-2.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
+            />
+        </div>
+    );
 };
+
+export default Input;

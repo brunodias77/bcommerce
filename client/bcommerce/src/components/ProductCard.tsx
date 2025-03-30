@@ -29,7 +29,7 @@ const ProductCard: React.FC<Product> = ({ _id, image, name, price, category }) =
 
                 {/* INFO */}
                 <div className="p-3 w-full">
-                    <h2 className="text-[16px] font-bold text-gray-900 line-clamp-1">{name}</h2>
+                    <h2 className="text-[16px] font-bold text-primary line-clamp-1">{name}</h2>
                     <h4 className="text-[12px] md:text-[13px] mb-1 text-gray-400">{category}</h4>
 
                     {/* Estrelas */}
