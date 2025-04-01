@@ -1,10 +1,43 @@
 import Container from "../components/Container";
+import ShippingCard from "../components/ShippingCard";
 import { AddressIcon, PaymentIcon, ShippingIcon } from "../components/StepIcons";
 import usePageName from '../hooks/UsePageName';
+import { Shipping as ShippingType } from "../types/shipping-type";
 
 const Shipping: React.FC = () => {
     const pageName = usePageName();
     const isActive = (name: string) => pageName === name;
+
+    const shippings: ShippingType[] = [
+        {
+            id: 'shipping1',
+            name: "Sedex",
+            price: 20.00,
+            estimatedDelivery: "2-5 dias úteis",
+            description: "Entrega rápida via Sedex",
+            shippingCompany: "Correios",
+            shippingTime: "2-5 dias úteis",
+        },
+        {
+            id: 'shipping2',
+            name: "PAC",
+            price: 10.00,
+            estimatedDelivery: "5-10 dias úteis",
+            description: "Entrega econômica via PAC",
+            shippingCompany: "Correios",
+            shippingTime: "5-10 dias úteis",
+        },
+        {
+            id: 'shipping3',
+            name: "Transportadora XYZ",
+            price: 15.00,
+            estimatedDelivery: "3-7 dias úteis",
+            description: "Entrega terceirizada com rastreio",
+            shippingCompany: "Transportadora XYZ",
+            shippingTime: "3-7 dias úteis",
+        }
+    ];
+
 
     return (
         <section className="bg-primary">
@@ -42,6 +75,19 @@ const Shipping: React.FC = () => {
                             <span className='font-bold'>Pagamento</span>
                         </div>
                     </div>
+                </div>
+
+                <div className='mt-20'>
+                    {
+                        shippings.map(shipping => (
+                            <ShippingCard
+                                key={shipping.id}
+                                data={shipping}
+                                checked={false}
+                                onChange={(id) => console.log(id)}
+                            />
+                        ))
+                    }
                 </div>
             </Container>
         </section>
