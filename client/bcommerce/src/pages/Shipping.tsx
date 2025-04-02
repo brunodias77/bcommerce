@@ -1,12 +1,17 @@
+import { useContext, useState } from "react";
 import Container from "../components/Container";
 import ShippingCard from "../components/ShippingCard";
 import { AddressIcon, PaymentIcon, ShippingIcon } from "../components/StepIcons";
 import usePageName from '../hooks/UsePageName';
 import { Shipping as ShippingType } from "../types/shipping-type";
+import Button from "../components/Button";
+import { ShopContext } from "../context/ShopContext";
 
 const Shipping: React.FC = () => {
     const pageName = usePageName();
     const isActive = (name: string) => pageName === name;
+    const [selectedShippingId, setSelectedShippingId] = useState<string | null>("shipping1");
+    const { navigate } = useContext(ShopContext);
 
     const shippings: ShippingType[] = [
         {
@@ -77,17 +82,28 @@ const Shipping: React.FC = () => {
                     </div>
                 </div>
 
-                <div className='mt-20'>
-                    {
-                        shippings.map(shipping => (
-                            <ShippingCard
-                                key={shipping.id}
-                                data={shipping}
-                                checked={false}
-                                onChange={(id) => console.log(id)}
-                            />
-                        ))
-                    }
+                <div className="my-20">
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 '>
+                        {
+                            shippings.map(shipping => (
+                                <ShippingCard
+                                    key={shipping.id}
+                                    data={shipping}
+                                    checked={selectedShippingId === shipping.id}
+                                    onChange={(id) => setSelectedShippingId(id)}
+                                />
+                            ))
+                        }
+                    </div>
+                </div>
+
+                <div className='flex items-center justify-end mt-10 gap-x-12'>
+                    <button onClick={() => navigate('/cart/address/')} className='py-2 px-4 border border-text-primary hover:brightness-50 rounded cursor-pointer focus:outline-none transition transform active:scale-95 flex items-center justify-center'>
+                        <span>Voltar </span>
+                    </button>
+                    <Button className="p-10" size="medium" onClick={() => navigate('/cart/address/shipping/payment')} >
+                        <span className="text-white">Continuar</span>
+                    </Button>
                 </div>
             </Container>
         </section>

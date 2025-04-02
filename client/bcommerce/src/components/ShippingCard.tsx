@@ -30,9 +30,11 @@ const ShippingCard: React.FC<ShippingCardProps> = ({ checked, data, onChange }) 
                              cursor-pointer
                              transition-colors duration-200
                            `} />
-
+                    <span className='font-bold text-primary'>{data.name}</span>
                 </div>
+                <span className='text-gray-400'>{data.description}</span>
             </div>
+            <span className='text-gray-400'>{data.estimatedDelivery}</span>
         </label>
     );
 };
