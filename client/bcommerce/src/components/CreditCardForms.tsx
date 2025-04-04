@@ -1,4 +1,9 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useReducer, useState, ChangeEvent, useContext } from 'react';
+import Input from './Input';
+import CardFront from '../assets/others/cardFront.png';
+import CardBack from '../assets/others/cardBack.png';
+import Button from './Button';
+import { ShopContext } from '../context/ShopContext';
 
 type ExpiryDate = {
     month: string;
@@ -7,29 +12,58 @@ type ExpiryDate = {
 
 type CardSide = 'front' | 'back';
 
+type CardState = {
+    cardholder: string;
+    cardNumber: string;
+    expired: ExpiryDate;
+    securityCode: string;
+};
+
+type Action =
+    | { type: 'SET_CARDHOLDER'; payload: string }
+    | { type: 'SET_CARD_NUMBER'; payload: string }
+    | { type: 'SET_EXPIRED'; payload: { month?: string; year?: string } }
+    | { type: 'SET_SECURITY_CODE'; payload: string };
+
+const initialState: CardState = {
+    cardholder: '',
+    cardNumber: '',
+    expired: { month: '', year: '' },
+    securityCode: '',
+};
+
+function reducer(state: CardState, action: Action): CardState {
+    switch (action.type) {
+        case 'SET_CARDHOLDER':
+            return { ...state, cardholder: action.payload };
+        case 'SET_CARD_NUMBER':
+            return { ...state, cardNumber: action.payload };
+        case 'SET_EXPIRED':
+            return { ...state, expired: { ...state.expired, ...action.payload } };
+        case 'SET_SECURITY_CODE':
+            return { ...state, securityCode: action.payload };
+        default:
+            return state;
+    }
+}
+
 export default function CreditCardForm() {
-    const [cardholder, setCardholder] = useState<string>('');
-    const [cardNumber, setCardNumber] = useState<string>('');
-    const [expired, setExpired] = useState<ExpiryDate>({ month: '', year: '' });
-    const [securityCode, setSecurityCode] = useState<string>('');
+    const [state, dispatch] = useReducer(reducer, initialState);
     const [cardSide, setCardSide] = useState<CardSide>('front');
+    const { createOrder } = useContext(ShopContext);
 
-    const formatCardNumber = (value: string): string => {
-        return value.replace(/\W/gi, '').replace(/(.{4})/g, '$1 ').trim();
-    };
+    const formatCardNumber = (value: string): string =>
+        value.replace(/\W/gi, '').replace(/(.{4})/g, '$1 ').trim();
 
-    const isValid = (): boolean => {
-        return (
-            cardholder.length >= 5 &&
-            cardNumber.length >= 19 &&
-            expired.month !== '' &&
-            expired.year !== '' &&
-            securityCode.length === 3
-        );
-    };
+    const isValid = (): boolean =>
+        state.cardholder.length >= 5 &&
+        state.cardNumber.length >= 19 &&
+        state.expired.month !== '' &&
+        state.expired.year !== '' &&
+        state.securityCode.length === 3;
 
     const handleSubmit = (): void => {
-        alert(`You did it ${cardholder}.`);
+        alert(`You did it ${state.cardholder}.`);
     };
 
     const handleInputChange = (
@@ -37,7 +71,7 @@ export default function CreditCardForm() {
     ) => {
         const { name, value } = e.target;
         if (name === 'month' || name === 'year') {
-            setExpired((prev) => ({ ...prev, [name]: value }));
+            dispatch({ type: 'SET_EXPIRED', payload: { [name]: value } });
         }
     };
 
@@ -49,18 +83,18 @@ export default function CreditCardForm() {
                         <div className="relative transition-all duration-300">
                             <img
                                 className="w-full h-auto"
-                                src="https://www.computop-paygate.com/Templates/imagesaboutYou_desktop/images/svg-cards/card-visa-front.png"
+                                src={CardFront}
                                 alt="front credit card"
                             />
                             <div className="front bg-transparent text-lg w-full text-white px-12 absolute left-0 bottom-12">
                                 <p className="number mb-5 sm:text-xl">
-                                    {cardNumber || '0000 0000 0000 0000'}
+                                    {state.cardNumber || '0000 0000 0000 0000'}
                                 </p>
                                 <div className="flex flex-row justify-between">
-                                    <p>{cardholder || 'Card holder'}</p>
+                                    <p>{state.cardholder || 'Card holder'}</p>
                                     <div>
-                                        {expired.month && <span>{expired.month}/</span>}
-                                        <span>{expired.year}</span>
+                                        {state.expired.month && <span>{state.expired.month}/</span>}
+                                        <span>{state.expired.year}</span>
                                     </div>
                                 </div>
                             </div>
@@ -69,12 +103,12 @@ export default function CreditCardForm() {
                         <div className="relative transition-all duration-300">
                             <img
                                 className="w-full h-auto"
-                                src="https://www.computop-paygate.com/Templates/imagesaboutYou_desktop/images/svg-cards/card-visa-back.png"
+                                src={CardBack}
                                 alt="back credit card"
                             />
                             <div className="bg-transparent text-white text-xl w-full flex justify-end absolute bottom-20 px-8 sm:bottom-24 right-0 sm:px-12">
                                 <div className="border border-white w-16 h-9 flex justify-center items-center">
-                                    <p>{securityCode || 'code'}</p>
+                                    <p>{state.securityCode || 'code'}</p>
                                 </div>
                             </div>
                         </div>
@@ -94,36 +128,40 @@ export default function CreditCardForm() {
                 </header>
 
                 <main className="mt-4 p-4">
-                    <h1 className="text-xl font-semibold text-gray-700 text-center">Card payment</h1>
+                    <h1 className="text-xl font-semibold text-gray-700 text-center">Pagamento com cartao de credito</h1>
 
                     <div className="my-3">
-                        <input
+                        <Input
+                            id="cardholder"
+                            label="Nome do titular"
                             type="text"
-                            className="input-field"
-                            placeholder="Card holder"
                             maxLength={22}
-                            value={cardholder}
-                            onChange={(e) => setCardholder(e.target.value)}
+                            value={state.cardholder}
+                            onChange={(e) => dispatch({ type: 'SET_CARDHOLDER', payload: e.target.value })}
+                            placeholder="Card holder"
                         />
                     </div>
                     <div className="my-3">
-                        <input
+                        <Input
+                            id="cardNumber"
+                            label="Numero do cartao"
                             type="text"
-                            className="input-field"
-                            placeholder="Card number"
                             maxLength={19}
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                            value={state.cardNumber}
+                            onChange={(e) =>
+                                dispatch({ type: 'SET_CARD_NUMBER', payload: formatCardNumber(e.target.value) })
+                            }
+                            placeholder="Card number"
                         />
                     </div>
 
                     <div className="my-3">
-                        <label className="text-gray-700">Expired</label>
+                        <label className="text-gray-700">Vencimento</label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                             <select
                                 className="form-select"
                                 name="month"
-                                value={expired.month}
+                                value={state.expired.month}
                                 onChange={handleInputChange}
                             >
                                 <option value="" disabled>MM</option>
@@ -136,7 +174,7 @@ export default function CreditCardForm() {
                             <select
                                 className="form-select"
                                 name="year"
-                                value={expired.year}
+                                value={state.expired.year}
                                 onChange={handleInputChange}
                             >
                                 <option value="" disabled>YY</option>
@@ -145,30 +183,38 @@ export default function CreditCardForm() {
                                 ))}
                             </select>
 
-                            <input
-                                type="text"
-                                className="input-field col-span-2"
-                                placeholder="Security code"
-                                maxLength={3}
-                                value={securityCode}
-                                onFocus={() => setCardSide('back')}
-                                onBlur={() => setCardSide('front')}
-                                onChange={(e) => setSecurityCode(e.target.value)}
-                            />
+                            <div className="col-span-2">
+                                <Input
+                                    id="securityCode"
+                                    label="Codigo de seguranca"
+                                    type="text"
+                                    maxLength={3}
+                                    value={state.securityCode}
+                                    onFocus={() => setCardSide('back')}
+                                    onBlur={() => setCardSide('front')}
+                                    onChange={(e) =>
+                                        dispatch({ type: 'SET_SECURITY_CODE', payload: e.target.value })
+                                    }
+                                    placeholder="CVV"
+                                />
+                            </div>
                         </div>
                     </div>
                 </main>
 
                 <footer className="mt-6 p-4">
-                    <button
-                        className="submit-button"
+                    <Button
+                        variant="primary"
+                        size="large"
+                        fullWidth
                         disabled={!isValid()}
-                        onClick={handleSubmit}
+                        onClick={createOrder}
                     >
-                        Pay now
-                    </button>
+                        Finalizar compra
+                    </Button>
                 </footer>
             </div>
         </div>
     );
 }
+

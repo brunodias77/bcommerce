@@ -2,10 +2,14 @@ import CreditCard from "../components/CreditCardForms";
 import Container from "../components/Container";
 import { AddressIcon, PaymentIcon, ShippingIcon } from "../components/StepIcons";
 import usePageName from '../hooks/UsePageName';
+import Summary from "../components/Summary";
+import { useContext } from "react";
 
 const Payment: React.FC = () => {
     const pageName = usePageName();
     const isActive = (name: string) => pageName === name;
+
+
 
     return (
         <section className="bg-primary">
@@ -38,13 +42,20 @@ const Payment: React.FC = () => {
                         <div>
                             <PaymentIcon isActive={isActive("payment")} />
                         </div>
-                        <div className={`${isActive("payment") ? "" : "text-gray-400"} flex flex-col items-center text-[12px] text-base/3 `}>
+                        <div className={`${isActive("payment") ? "" : "text-gray-400"} flex flex-col items-center text-[12px] text-base/3 `} >
                             <span>Passo 3</span>
                             <span className='font-bold'>Pagamento</span>
                         </div>
                     </div>
                 </div>
-                <CreditCard />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 mt-8">
+                    <div className="lg:col-span-2">
+                        <Summary />
+                    </div>
+                    <div className="lg:col-span-1">
+                        <CreditCard />
+                    </div>
+                </div>
             </Container>
         </section>
     );

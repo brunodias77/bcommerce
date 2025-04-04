@@ -1,4 +1,4 @@
-/* eslint-disable prefer-const */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { createContext, ReactNode, useEffect, useReducer, useMemo } from "react";
 import { products } from "../assets/products/data";
@@ -24,6 +24,8 @@ export interface ShopContextType {
     navigate: ReturnType<typeof useNavigate>;
     aplicarCupom: (codigo: string) => boolean;
     cupomDesconto: number;
+    createOrder: () => Promise<void>; // ✅ Adicionado!
+
 }
 
 type CartAction =
@@ -31,6 +33,7 @@ type CartAction =
     | { type: "UPDATE_QUANTITY"; itemId: string; color: string; quantity: number };
 
 const initialCartState: CartItems = {};
+
 
 const cartReducer = (state: CartItems, action: CartAction): CartItems => {
     const newState = JSON.parse(JSON.stringify(state)); // Clonagem segura do estado
@@ -72,6 +75,46 @@ const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) =
     const navigate = useNavigate();
     const currency = "$";
     const delivery_charges = 10;
+
+    // TODO
+    const createOrder = async () => {
+        if (Object.keys(cartItems).length === 0) {
+            toast.error("Seu carrinho está vazio! 🛒❌");
+            return;
+        }
+
+        const orderItems = Object.entries(cartItems).map(([itemId, colors]) => {
+            const product = products.find(p => p._id === itemId);
+            if (!product) return null;
+
+            return Object.entries(colors).map(([color, quantity]) => ({
+                id: itemId,
+                name: product.name,
+                color,
+                quantity,
+                price: product.price * quantity,
+            }));
+        }).flat().filter(Boolean); // Remove valores nulos
+
+        const subtotal = orderItems.reduce((total, item) => total + item!.price, 0);
+        const discountAmount = subtotal * cupomDesconto;
+        const total = subtotal - discountAmount + delivery_charges;
+
+        const orderDetails = {
+            items: orderItems,
+            subtotal,
+            discount: discountAmount,
+            shipping: delivery_charges,
+            total,
+        };
+
+        console.log("Pedido Criado:", orderDetails);
+        toast.success("Pedido criado com sucesso! 🎉");
+
+        // Aqui você pode enviar o pedido para o backend via API:
+        // await fetch("/api/orders", { method: "POST", body: JSON.stringify(orderDetails) });
+    }
+
 
     // 🎯 Adicionar ao carrinho
     const addToCart = (itemId: string, color: string) => {
@@ -132,7 +175,8 @@ const ShopContextProvider: React.FC<ShopContextProviderProps> = ({ children }) =
         getCartAmount,
         navigate,
         aplicarCupom,
-        cupomDesconto
+        cupomDesconto,
+        createOrder
     };
     return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };
