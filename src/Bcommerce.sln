@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ApiGateway", "ApiGateway", "{390A8F5D-811B-4ED3-878C-4629A6174532}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{4F547D3A-949B-4A4D-93E7-B7DF0AA87D4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildingBlocks", "BuildingBlocks", "{0D038CA9-43A4-4DFC-834E-EAE233A4E65D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlocks", "BuildingBlocks\BuildingBlocks\BuildingBlocks.csproj", "{E74AA813-21EE-42FB-BC68-6033AA612B1C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E74AA813-21EE-42FB-BC68-6033AA612B1C} = {0D038CA9-43A4-4DFC-834E-EAE233A4E65D}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
