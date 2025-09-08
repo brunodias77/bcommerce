@@ -1,0 +1,63 @@
+{
+  "keycloak": {
+    "url": "http://localhost:8080",
+    "realm": "bcommerce",
+    "clientId": "bcommerce-client",
+    "clientSecret": "bcommerce-secret-2024"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379
+  },
+  "rabbitmq": {
+    "host": "localhost",
+    "port": 5672,
+    "username": "admin",
+    "password": "admin123",
+    "managementPort": 15672
+  },
+  "databases": {
+    "identity": {
+      "host": "localhost",
+      "port": 5434,
+      "database": "identity_service",
+      "username": "identity_user",
+      "password": "identity123"
+    },
+    "catalog": {
+      "host": "localhost",
+      "port": 5435,
+      "database": "catalog_service",
+      "username": "catalog_user",
+      "password": "catalog123"
+    },
+    "inventory": {
+      "host": "localhost",
+      "port": 5436,
+      "database": "inventory_service",
+      "username": "inventory_user",
+      "password": "inventory123"
+    },
+    "order": {
+      "host": "localhost",
+      "port": 5437,
+      "database": "order_service",
+      "username": "order_user",
+      "password": "order123"
+    },
+    "payment": {
+      "host": "localhost",
+      "port": 5438,
+      "database": "payment_service",
+      "username": "payment_user",
+      "password": "payment123"
+    },
+    "notification": {
+      "host": "localhost",
+      "port": 5439,
+      "database": "notification_service",
+      "username": "notification_user",
+      "password": "notification123"
+    }
+  }
+}
