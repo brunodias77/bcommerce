@@ -1,0 +1,175 @@
+version: '3.8'
+
+services:
+  # Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak123
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak-db
+    command: start-dev
+    networks:
+      - bcommerce-network
+
+  # Keycloak Database
+  keycloak-db:
+    image: postgres:15
+    container_name: keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak123
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - bcommerce-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - bcommerce-network
+
+  # Identity Service Database
+  identity-db:
+    image: postgres:15
+    container_name: identity-db
+    environment:
+      POSTGRES_DB: identity_service
+      POSTGRES_USER: identity_user
+      POSTGRES_PASSWORD: identity123
+    volumes:
+      - identity_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - bcommerce-network
+
+  # Catalog Service Database
+  catalog-db:
+    image: postgres:15
+    container_name: catalog-db
+    environment:
+      POSTGRES_DB: catalog_service
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog123
+    volumes:
+      - catalog_db_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - bcommerce-network
+
+  # Inventory Service Database
+  inventory-db:
+    image: postgres:15
+    container_name: inventory-db
+    environment:
+      POSTGRES_DB: inventory_service
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory123
+    volumes:
+      - inventory_db_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - bcommerce-network
+
+  # Order Service Database
+  order-db:
+    image: postgres:15
+    container_name: order-db
+    environment:
+      POSTGRES_DB: order_service
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order123
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - bcommerce-network
+
+  # Payment Service Database
+  payment-db:
+    image: postgres:15
+    container_name: payment-db
+    environment:
+      POSTGRES_DB: payment_service
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment123
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+    networks:
+      - bcommerce-network
+
+  # Notification Service Database
+  notification-db:
+    image: postgres:15
+    container_name: notification-db
+    environment:
+      POSTGRES_DB: notification_service
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification123
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+    networks:
+      - bcommerce-network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - bcommerce-network
+
+volumes:
+  keycloak_db_data:
+  redis_data:
+  identity_db_data:
+  catalog_db_data:
+  inventory_db_data:
+  order_db_data:
+  payment_db_data:
+  notification_db_data:
+  rabbitmq_data:
+
+networks:
+  bcommerce-network:
+    driver: bridge
