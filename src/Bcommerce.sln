@@ -8,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildingBlocks", "BuildingB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlocks", "BuildingBlocks\BuildingBlocks\BuildingBlocks.csproj", "{E74AA813-21EE-42FB-BC68-6033AA612B1C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "ApiGateway\ApiGateway\ApiGateway.csproj", "{0AAD1564-276A-40DC-B755-DEADE95673D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,11 +17,16 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E74AA813-21EE-42FB-BC68-6033AA612B1C} = {0D038CA9-43A4-4DFC-834E-EAE233A4E65D}
+		{0AAD1564-276A-40DC-B755-DEADE95673D4} = {390A8F5D-811B-4ED3-878C-4629A6174532}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E74AA813-21EE-42FB-BC68-6033AA612B1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AAD1564-276A-40DC-B755-DEADE95673D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AAD1564-276A-40DC-B755-DEADE95673D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AAD1564-276A-40DC-B755-DEADE95673D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AAD1564-276A-40DC-B755-DEADE95673D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
