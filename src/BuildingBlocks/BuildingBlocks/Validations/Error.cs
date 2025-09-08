@@ -1,6 +1,3 @@
 namespace BuildingBlocks.Validations;
 
-public class Error
-{
-    
-}
+public record Error(string Code, string Message);

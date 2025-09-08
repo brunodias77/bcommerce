@@ -11,17 +11,24 @@ var builder = WebApplication.CreateBuilder(args);
 // Configurar CORS (Cross-Origin Resource Sharing)
 builder.Services.AddCors(options =>
 {
-    // Define uma política CORS específica chamada "AllowFrontend"
     options.AddPolicy("AllowFrontend", policy =>
     {
-        // Permite requisições apenas do Angular dev server na porta 4200
-        policy.WithOrigins("http://localhost:4200") // Angular dev server
-              // Permite qualquer método HTTP (GET, POST, PUT, DELETE, etc.)
+        policy.WithOrigins(
+                "http://localhost:4200",  // Angular
+                "http://localhost:3000",  // React (se usar)
+                "http://localhost:8080"   // Outras apps
+              )
               .AllowAnyMethod()
-              // Permite qualquer cabeçalho HTTP
               .AllowAnyHeader()
-              // Permite o envio de credenciais (cookies, headers de autorização)
               .AllowCredentials();
+    });
+    
+    // Política mais permissiva para desenvolvimento
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
