@@ -28,15 +28,16 @@ public class Mediator : IMediator, IPublisher
     /// 3. Constrói o pipeline de execução (behaviors + handler)
     /// 4. Executa o pipeline e retorna a resposta
     /// </summary>
-    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request,
+        CancellationToken cancellationToken = default)
     {
         var requestType = request.GetType();
         var responseType = typeof(TResponse);
-        
+
         // Resolve o handler específico para este tipo de request
         var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
         var handler = _serviceProvider.GetService(handlerType);
-        
+
         if (handler == null)
             throw new InvalidOperationException($"Nenhum handler encontrado para o request do tipo {requestType.Name}");
 
@@ -48,19 +49,20 @@ public class Mediator : IMediator, IPublisher
         RequestHandlerDelegate<TResponse> handlerDelegate = async () =>
         {
             var handleMethod = handlerType.GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.Handle));
-            
+
             if (handleMethod == null)
                 throw new InvalidOperationException($"Método Handle não encontrado no handler para {requestType.Name}");
 
             // Invoca o método Handle do handler via reflection
             var result = handleMethod.Invoke(handler, new object[] { request, cancellationToken });
-            
+
             // Trata diferentes tipos de retorno do handler
             return result switch
             {
                 Task<TResponse> taskResult => await taskResult,
                 TResponse directResult => directResult,
-                _ => throw new InvalidOperationException($"Handler para {requestType.Name} retornou tipo inesperado: {result?.GetType()}")
+                _ => throw new InvalidOperationException(
+                    $"Handler para {requestType.Name} retornou tipo inesperado: {result?.GetType()}")
             };
         };
 
@@ -70,21 +72,25 @@ public class Mediator : IMediator, IPublisher
         {
             var currentHandler = handlerDelegate;
             var behaviorInstance = behavior;
-            
+
             handlerDelegate = () =>
             {
-                var handleMethod = behaviorType.GetMethod(nameof(IPipelineBehavior<IRequest<TResponse>, TResponse>.Handle));
-                
+                var handleMethod =
+                    behaviorType.GetMethod(nameof(IPipelineBehavior<IRequest<TResponse>, TResponse>.Handle));
+
                 if (handleMethod == null)
-                    throw new InvalidOperationException($"Método Handle não encontrado no behavior {behavior.GetType().Name}");
+                    throw new InvalidOperationException(
+                        $"Método Handle não encontrado no behavior {behavior.GetType().Name}");
 
                 // Invoca o behavior passando o request e o próximo handler na cadeia
-                var result = handleMethod.Invoke(behaviorInstance, new object[] { request, currentHandler, cancellationToken });
-                
+                var result = handleMethod.Invoke(behaviorInstance,
+                    new object[] { request, currentHandler, cancellationToken });
+
                 return result switch
                 {
                     Task<TResponse> taskResult => taskResult,
-                    _ => throw new InvalidOperationException($"Behavior {behavior.GetType().Name} retornou tipo inesperado")
+                    _ => throw new InvalidOperationException(
+                        $"Behavior {behavior.GetType().Name} retornou tipo inesperado")
                 };
             };
         }
@@ -101,11 +107,11 @@ public class Mediator : IMediator, IPublisher
     public async Task Send(IRequest request, CancellationToken cancellationToken = default)
     {
         var requestType = request.GetType();
-        
+
         // Resolve o handler específico para este tipo de request
         var handlerType = typeof(IRequestHandler<>).MakeGenericType(requestType);
         var handler = _serviceProvider.GetService(handlerType);
-        
+
         if (handler == null)
             throw new InvalidOperationException($"Nenhum handler encontrado para o request do tipo {requestType.Name}");
 
@@ -113,7 +119,7 @@ public class Mediator : IMediator, IPublisher
         // O wrapper converte IRequest em IRequest<Unit> permitindo uso do pipeline
         var wrapperType = typeof(RequestWrapper<>).MakeGenericType(requestType);
         var wrapper = Activator.CreateInstance(wrapperType, request);
-        
+
         if (wrapper is IRequest<Unit> unitRequest)
         {
             // Usa o método Send com retorno, aproveitando todo o pipeline
@@ -123,12 +129,12 @@ public class Mediator : IMediator, IPublisher
         {
             // Fallback para execução direta (sem pipeline behaviors)
             var handleMethod = handlerType.GetMethod(nameof(IRequestHandler<IRequest>.Handle));
-            
+
             if (handleMethod == null)
                 throw new InvalidOperationException($"Método Handle não encontrado no handler para {requestType.Name}");
 
             var result = handleMethod.Invoke(handler, new object[] { request, cancellationToken });
-            
+
             if (result is Task task)
                 await task;
             else
@@ -173,29 +179,29 @@ public class Mediator : IMediator, IPublisher
     {
         var notificationType = notification.GetType();
         var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
-        
+
         // Resolve todos os handlers registrados para este tipo de notificação
         var handlers = _serviceProvider.GetServices(handlerType);
-        
+
         var tasks = new List<Task>();
-        
+
         // Invoca cada handler de forma assíncrona
         foreach (var handler in handlers)
         {
             var handleMethod = handlerType.GetMethod(nameof(INotificationHandler<INotification>.Handle));
-            
+
             if (handleMethod != null)
             {
                 // Invoca o método Handle do handler via reflection
                 var result = handleMethod.Invoke(handler, new object[] { notification, cancellationToken });
-                
+
                 if (result is Task task)
                 {
                     tasks.Add(task);
                 }
             }
         }
-        
+
         // Aguarda a conclusão de todos os handlers em paralelo
         // Isso permite que múltiplos handlers processem o evento simultaneamente
         if (tasks.Count > 0)

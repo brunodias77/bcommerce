@@ -20,7 +20,8 @@ public interface IPipelineBehavior<in TRequest, TResponse>
     /// <param name="next">Delegate para o próximo handler no pipeline</param>
     /// <param name="cancellationToken">Token de cancelamento</param>
     /// <returns>Resposta do processamento</returns>
-    Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken);
+    Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>

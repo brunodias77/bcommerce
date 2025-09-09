@@ -7,7 +7,7 @@ namespace BuildingBlocks.Abstractions;
 /// </summary>
 /// <typeparam name="TRequest">Tipo do request a ser processado</typeparam>
 /// <typeparam name="TResponse">Tipo da resposta retornada</typeparam>
-public interface IRequestHandler<in TRequest, TResponse> 
+public interface IRequestHandler<in TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     /// <summary>
@@ -25,7 +25,7 @@ public interface IRequestHandler<in TRequest, TResponse>
 /// Implementa a lógica de negócio para commands que apenas executam ações
 /// </summary>
 /// <typeparam name="TRequest">Tipo do request a ser processado</typeparam>
-public interface IRequestHandler<in TRequest> 
+public interface IRequestHandler<in TRequest>
     where TRequest : IRequest
 {
     /// <summary>

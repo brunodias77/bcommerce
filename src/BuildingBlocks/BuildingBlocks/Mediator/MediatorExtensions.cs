@@ -23,8 +23,9 @@ public static class MediatorExtensions
     {
         // Registra os serviços principais do Mediator
         services.AddScoped<IMediator, Mediator>();
-        services.AddScoped<IPublisher>(provider => provider.GetRequiredService<IMediator>() as IPublisher 
-            ?? throw new InvalidOperationException("Mediator deve implementar IPublisher"));
+        services.AddScoped<IPublisher>(provider => provider.GetRequiredService<IMediator>() as IPublisher
+                                                   ?? throw new InvalidOperationException(
+                                                       "Mediator deve implementar IPublisher"));
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         // Se nenhum assembly for fornecido, usa o assembly que está chamando
@@ -146,7 +147,7 @@ public static class MediatorExtensions
             var handlerType = typeof(IRequestHandler<>).MakeGenericType(requestType);
             var wrapperHandlerType = typeof(RequestWrapperHandler<>).MakeGenericType(requestType);
             var wrapperHandlerInterface = typeof(IRequestHandler<,>).MakeGenericType(wrapperType, typeof(Unit));
-            
+
             // Registra o wrapper handler que delega para o handler original
             services.AddScoped(wrapperHandlerInterface, provider =>
             {
@@ -155,6 +156,7 @@ public static class MediatorExtensions
                 {
                     return Activator.CreateInstance(wrapperHandlerType, originalHandler)!;
                 }
+
                 return null!;
             });
         }
@@ -178,7 +180,7 @@ public static class MediatorExtensions
             return false;
 
         var genericTypeDefinition = type.GetGenericTypeDefinition();
-        return genericTypeDefinition == typeof(IRequestHandler<,>) || 
+        return genericTypeDefinition == typeof(IRequestHandler<,>) ||
                genericTypeDefinition == typeof(IRequestHandler<>);
     }
 

@@ -30,10 +30,10 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     {
         // Cria uma cópia da lista de eventos para evitar modificações durante iteração
         var events = aggregate.Events.ToList();
-        
+
         // Limpa os eventos do agregado para evitar republicação
         aggregate.ClearEvents();
-        
+
         // Publica cada evento sequencialmente
         foreach (var domainEvent in events)
         {
@@ -47,17 +47,18 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     /// 2. Limpa os eventos de todos os agregados
     /// 3. Publica todos os eventos sequencialmente
     /// </summary>
-    public async Task DispatchEventsAsync(IEnumerable<AggregateRoot> aggregates, CancellationToken cancellationToken = default)
+    public async Task DispatchEventsAsync(IEnumerable<AggregateRoot> aggregates,
+        CancellationToken cancellationToken = default)
     {
         var allEvents = new List<DomainEvent>();
-        
+
         // Coleta todos os eventos de todos os agregados
         foreach (var aggregate in aggregates)
         {
             allEvents.AddRange(aggregate.Events);
             aggregate.ClearEvents();
         }
-        
+
         // Publica todos os eventos coletados sequencialmente
         foreach (var domainEvent in allEvents)
         {

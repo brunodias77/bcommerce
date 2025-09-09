@@ -19,7 +19,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         _slowRequestThresholdMs = 5000; // 5 seconds default
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
@@ -27,18 +28,18 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         try
         {
             var response = await next();
-            
+
             stopwatch.Stop();
             var elapsedMs = stopwatch.ElapsedMilliseconds;
 
             if (elapsedMs > _slowRequestThresholdMs)
             {
-                _logger.LogWarning("Slow request detected: {RequestName} took {ElapsedMilliseconds}ms", 
+                _logger.LogWarning("Slow request detected: {RequestName} took {ElapsedMilliseconds}ms",
                     requestName, elapsedMs);
             }
             else
             {
-                _logger.LogDebug("Request {RequestName} completed in {ElapsedMilliseconds}ms", 
+                _logger.LogDebug("Request {RequestName} completed in {ElapsedMilliseconds}ms",
                     requestName, elapsedMs);
             }
 
@@ -47,7 +48,7 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Request {RequestName} failed after {ElapsedMilliseconds}ms", 
+            _logger.LogError(ex, "Request {RequestName} failed after {ElapsedMilliseconds}ms",
                 requestName, stopwatch.ElapsedMilliseconds);
             throw;
         }

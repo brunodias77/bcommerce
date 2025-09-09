@@ -16,7 +16,7 @@ public interface IMediator
     /// <param name="cancellationToken">Token para cancelamento da operação</param>
     /// <returns>Resposta do tipo TResponse</returns>
     Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Envia um request que não retorna resposta (void)
     /// Utilizado para commands que apenas executam uma ação sem retornar dados

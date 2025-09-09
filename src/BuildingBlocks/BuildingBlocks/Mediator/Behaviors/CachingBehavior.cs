@@ -21,10 +21,11 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
-        
+
         // Only cache queries
         if (!IsQuery(requestName))
         {
@@ -38,7 +39,7 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         }
 
         var cacheKey = GenerateCacheKey(request);
-        
+
         if (_cache.TryGetValue(cacheKey, out TResponse cachedResponse))
         {
             _logger.LogDebug("Cache hit for {RequestName} with key {CacheKey}", requestName, cacheKey);
@@ -46,17 +47,17 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         }
 
         _logger.LogDebug("Cache miss for {RequestName} with key {CacheKey}", requestName, cacheKey);
-        
+
         var response = await next();
-        
+
         var cacheOptions = new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = cacheableRequest.CacheDuration ?? _defaultCacheDuration
         };
-        
+
         _cache.Set(cacheKey, response, cacheOptions);
         _logger.LogDebug("Response cached for {RequestName} with key {CacheKey}", requestName, cacheKey);
-        
+
         return response;
     }
 

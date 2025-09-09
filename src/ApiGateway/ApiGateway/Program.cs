@@ -1,4 +1,5 @@
 // Importa o namespace para autenticação JWT Bearer
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 // Importa o namespace para validação de tokens JWT
 using Microsoft.IdentityModel.Tokens;
@@ -14,21 +15,21 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:4200",  // Angular
-                "http://localhost:3000",  // React (se usar)
-                "http://localhost:8080"   // Outras apps
-              )
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+                "http://localhost:4200", // Angular
+                "http://localhost:3000", // React (se usar)
+                "http://localhost:8080" // Outras apps
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
-    
+
     // Política mais permissiva para desenvolvimento
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
@@ -39,14 +40,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         // Obtém as configurações JWT do arquivo appsettings.json
         var jwtSettings = builder.Configuration.GetSection("Jwt");
-        
+
         // Define a autoridade que emite os tokens (servidor de identidade)
         options.Authority = jwtSettings["Authority"];
         // Define a audiência esperada no token
         options.Audience = jwtSettings["Audience"];
         // Define se HTTPS é obrigatório para metadados (padrão: true)
         options.RequireHttpsMetadata = bool.Parse(jwtSettings["RequireHttpsMetadata"] ?? "true");
-        
+
         // Configura os parâmetros de validação do token
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -61,7 +62,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             // Remove a tolerância de tempo para expiração (mais rigoroso)
             ClockSkew = TimeSpan.Zero
         };
-        
+
         // Configura eventos personalizados para autenticação
         options.Events = new JwtBearerEvents
         {

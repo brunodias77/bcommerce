@@ -8,25 +8,25 @@ public abstract class Entity
     public DateTime CreatedAt { get; protected set; }
     public DateTime? UpdatedAt { get; protected set; }
     public DateTime? DeletedAt { get; protected set; }
-    
-    protected Entity() 
+
+    protected Entity()
     {
         Id = Guid.NewGuid();
         CreatedAt = DateTime.UtcNow;
     }
-    
+
     protected Entity(Guid id)
     {
         Id = id;
         CreatedAt = DateTime.UtcNow;
     }
-    
+
     public abstract void Validate(IValidationHandler handler);
-    
+
     public void MarkAsUpdated() => UpdatedAt = DateTime.UtcNow;
     public void MarkAsDeleted() => DeletedAt = DateTime.UtcNow;
     public bool IsDeleted => DeletedAt.HasValue;
-    
+
     public override bool Equals(object? obj)
     {
         if (obj is not Entity other)
@@ -35,15 +35,15 @@ public abstract class Entity
             return true;
         return Id.Equals(other.Id);
     }
-    
+
     public override int GetHashCode() => Id.GetHashCode();
-    
+
     public static bool operator ==(Entity? left, Entity? right)
     {
         if (left is null && right is null) return true;
         if (left is null || right is null) return false;
         return left.Equals(right);
     }
-    
+
     public static bool operator !=(Entity? left, Entity? right) => !(left == right);
 }

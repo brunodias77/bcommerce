@@ -60,7 +60,7 @@ internal class RequestWrapperHandler<TRequest> : IRequestHandler<RequestWrapper<
 
         // Delega a execução para o handler original
         await _handler.Handle(request.Request, cancellationToken);
-        
+
         // Retorna Unit para satisfazer a interface IRequestHandler<,>
         return Unit.Value;
     }

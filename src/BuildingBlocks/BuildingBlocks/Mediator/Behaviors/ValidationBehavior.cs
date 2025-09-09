@@ -17,7 +17,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
         var notification = new ValidationHandler();
@@ -27,7 +28,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         {
             validatable.Validate(notification);
         }
-        
+
         // Se o request é um ValueObject ou Entity, validar também
         if (request is ValueObject valueObject)
         {
@@ -60,7 +61,7 @@ public class ValidationException : Exception
 {
     public IReadOnlyList<Error> Errors { get; }
 
-    public ValidationException(IReadOnlyList<Error> errors) 
+    public ValidationException(IReadOnlyList<Error> errors)
         : base($"Validation failed: {string.Join(", ", errors.Select(e => e.Message))}")
     {
         Errors = errors;

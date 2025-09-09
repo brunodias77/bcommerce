@@ -6,11 +6,15 @@ namespace BuildingBlocks.Abstractions;
 /// Exemplo: GetUserByIdQuery, CreateUserCommand
 /// </summary>
 /// <typeparam name="TResponse">Tipo do resultado retornado pelo request</typeparam>
-public interface IRequest<out TResponse> { }
+public interface IRequest<out TResponse>
+{
+}
 
 /// <summary>
 /// Interface base para requests que não retornam resultado (void)
 /// Implementada por commands que apenas executam uma ação
 /// Exemplo: DeleteUserCommand, UpdateUserPasswordCommand
 /// </summary>
-public interface IRequest { }
+public interface IRequest
+{
+}

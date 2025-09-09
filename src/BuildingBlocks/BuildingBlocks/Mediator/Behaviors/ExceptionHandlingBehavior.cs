@@ -17,10 +17,11 @@ public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
-        
+
         try
         {
             return await next();
@@ -37,9 +38,9 @@ public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred while handling {RequestName}: {ExceptionMessage}", 
+            _logger.LogError(ex, "Unhandled exception occurred while handling {RequestName}: {ExceptionMessage}",
                 requestName, ex.Message);
-            
+
             // You could wrap the exception here or add correlation IDs
             throw new ApplicationException($"An error occurred while processing {requestName}", ex);
         }
