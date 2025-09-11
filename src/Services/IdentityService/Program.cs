@@ -1,9 +1,33 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using IdentityService.Data;
+using IdentityService.Commands.Register;
+using IdentityService.dtos;
+using BuildingBlocks.Abstractions;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar Entity Framework com PostgreSQL
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName);
+        npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(30), errorCodesToAdd: null);
+    });
+    
+    // Configurações para desenvolvimento
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSensitiveDataLogging();
+        options.EnableDetailedErrors();
+    }
+});
 
 // Adicionar serviços de health check
 builder.Services.AddHealthChecks();
@@ -32,6 +56,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Adicionar autorização
 builder.Services.AddAuthorization();
+
+// Registrar handlers
+builder.Services.AddScoped<IRequestHandler<RegisterUserCommand, RegisterUserResponse>, RegisterUserCommandHandler>();
 
 var app = builder.Build();
 
@@ -124,6 +151,30 @@ app.MapPost("/api/identity/login", (LoginRequest request) =>
     }
 
     return Results.Unauthorized();
+});
+
+// Endpoint para registrar usuário
+app.MapPost("/api/users/register", async (
+    RegisterUserCommand command,
+    IRequestHandler<RegisterUserCommand, RegisterUserResponse> handler) =>
+{
+    try
+    {
+        var response = await handler.Handle(command, CancellationToken.None);
+        return Results.Ok(response);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 500,
+            title: "Erro interno do servidor"
+        );
+    }
 });
 
 app.Run();
