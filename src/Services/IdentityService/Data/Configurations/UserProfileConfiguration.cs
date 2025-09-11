@@ -61,6 +61,8 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
                 .HasColumnName("last_name")
                 .HasMaxLength(100)
                 .IsRequired();
+                
+            nameBuilder.WithOwner().HasForeignKey("Id");
         });
 
         // Configuração do PhoneNumber como value object
@@ -69,12 +71,14 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
             phoneBuilder.Property(p => p.Number)
                 .HasColumnName("phone_number")
                 .HasMaxLength(15)
-                .IsRequired();
+                .IsRequired(false);
                 
             phoneBuilder.Property(p => p.CountryCode)
                 .HasColumnName("phone_country_code")
                 .HasMaxLength(5)
-                .IsRequired();
+                .IsRequired(false);
+                
+            phoneBuilder.WithOwner().HasForeignKey("Id");
         });
 
         // Query filter para soft delete

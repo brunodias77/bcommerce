@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using BuildingBlocks.Abstractions;
+using IdentityService.Events;
 using System.Text.Json;
 
 namespace IdentityService.Data.Configurations;
@@ -25,26 +25,28 @@ public class DomainEventConfiguration : IEntityTypeConfiguration<DomainEvent>
             .IsRequired();
 
         // Discriminator para diferentes tipos de eventos
-        builder.HasDiscriminator<string>("event_type");
+        builder.HasDiscriminator<string>("event_type")
+            .HasValue<UserProfileCreatedEvent>("UserProfileCreated")
+            .HasValue<UserProfileUpdatedEvent>("UserProfileUpdated");
 
         // Configuração adicional para armazenar dados do evento como JSON
-        builder.Property<string>("EventData")
+        builder.Property(x => x.EventData)
             .HasColumnName("event_data")
             .HasColumnType("jsonb")
             .IsRequired();
 
         // Campos adicionais para controle
-        builder.Property<Guid?>("AggregateId")
+        builder.Property(x => x.AggregateId)
             .HasColumnName("aggregate_id")
             .IsRequired(false);
             
-        builder.Property<DateTime?>("ProcessedAt")
+        builder.Property(x => x.ProcessedAt)
             .HasColumnName("processed_at")
             .HasColumnType("timestamp with time zone")
             .IsRequired(false);
 
         // Índices para performance
-        builder.HasIndex("AggregateId")
+        builder.HasIndex(x => x.AggregateId)
             .HasDatabaseName("idx_domain_events_aggregate_id");
             
         builder.HasIndex("event_type")
@@ -53,7 +55,7 @@ public class DomainEventConfiguration : IEntityTypeConfiguration<DomainEvent>
         builder.HasIndex(x => x.OccurredAt)
             .HasDatabaseName("idx_domain_events_occurred_at");
             
-        builder.HasIndex("ProcessedAt")
+        builder.HasIndex(x => x.ProcessedAt)
             .HasDatabaseName("idx_domain_events_processed_at")
             .HasFilter("processed_at IS NULL");
     }

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using IdentityService.Models;
 using IdentityService.Data.Configurations;
 using BuildingBlocks.Abstractions;
-// using IdentityService.Events; // Temporariamente comentado
+using IdentityService.Events;
 
 namespace IdentityService.Data;
 
@@ -13,26 +13,18 @@ public class IdentityDbContext : DbContext
     }
 
     public DbSet<UserProfile> UserProfiles { get; set; } = null!;
-    // public DbSet<DomainEvent> DomainEvents { get; set; } = null!; // Temporariamente comentado
+    public DbSet<IdentityService.Events.DomainEvent> DomainEvents { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Aplicar configurações específicas (temporariamente apenas UserProfile)
+        // Aplicar configurações específicas
         modelBuilder.ApplyConfiguration(new UserProfileConfiguration());
-        // modelBuilder.ApplyConfiguration(new DomainEventConfiguration()); // Temporariamente comentado
+        modelBuilder.ApplyConfiguration(new DomainEventConfiguration());
         
         // Ignorar a propriedade Events do AggregateRoot
         modelBuilder.Entity<UserProfile>().Ignore(x => x.Events);
-        
-        // Ignorar Value Objects temporariamente
-        modelBuilder.Entity<UserProfile>().Ignore(x => x.Name);
-        modelBuilder.Entity<UserProfile>().Ignore(x => x.Phone);
-        
-        // Ignorar entidades de Value Objects
-        modelBuilder.Ignore<PersonName>();
-        modelBuilder.Ignore<PhoneNumber>();
 
         // Configurações globais
         ConfigureGlobalSettings(modelBuilder);
