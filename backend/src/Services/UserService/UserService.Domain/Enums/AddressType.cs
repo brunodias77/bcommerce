@@ -1,6 +1,7 @@
 namespace UserService.Domain.Enums;
 
-public class AddressType
+public enum AddressType
 {
-    
+    Shipping,
+    Billing
 }
