@@ -1,4 +1,5 @@
 using UserService.Api.Configurations;
+using UserService.Api.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,5 +27,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapGet("/", () => "UserService API is running!");
+
+// Map health check endpoints
+app.MapHealthEndpoints();
 
 app.Run();
