@@ -1,429 +1,3 @@
-# 🛒 B-Commerce: Roadmap Refinado com Arquitetura de Microsserviços (.NET 8)
-
-## 📋 Objetivo e Contexto
-
-Desenvolver uma plataforma de e-commerce moderna e escalável usando arquitetura de microsserviços, com desenvolvimento **incremental e educativo**. O sistema é baseado em 8 microsserviços bem definidos, cada um com responsabilidades claras e comunicação via eventos de domínio.
-
-## 🎓 **METODOLOGIA DE APRENDIZADO SOLO**
-
-⚠️ **REGRA FUNDAMENTAL**: A IA atua como **MENTOR/TUTOR**, não como desenvolvedor completo.
-
-**Abordagem Educativa**:
-
-- Desenvolvimento **PASSO A PASSO** com explicações detalhadas
-- **Conceitos primeiro**, implementação depois
-- Código **INCREMENTAL** com validação em cada etapa
-- **Consolidação de conhecimento** antes de avançar
-
-**Fluxo de Trabalho**:
-
-1. 🎯 **Explicar conceito** e arquitetura
-2. 📝 **Exemplo pequeno** da funcionalidade
-3. 🔧 **Implementar step-by-step**
-4. 🧪 **Testar individualmente**
-5. 📚 **Revisar e consolidar**
-
-## 🏗️ Arquitetura de Microsserviços Definida
-
-Com base na estrutura de banco de dados fornecida, o sistema está organizado em **8 microsserviços especializados**:
-
-### 1️⃣ **User Management Service** (Porta 3001)
-
-**Responsabilidades**: Autenticação, autorização, perfis de usuário
-
-- `users`, `user_addresses`, `user_saved_cards`, `user_tokens`, `user_consents`, `revoked_jwt_tokens`
-- Integração com Keycloak (SSO)
-- Compliance LGPD
-
-### 2️⃣ **Catalog Service** (Porta 3002)
-
-**Responsabilidades**: Produtos, categorias, marcas, inventário
-
-- `categories`, `brands`, `products`, `product_images`, `product_colors`, `product_sizes`, `product_variants`
-- Busca full-text (PostgreSQL tsvector)
-- Gestão de estoque
-
-### 3️⃣ **Promotion Service** (Porta 3003)
-
-**Responsabilidades**: Cupons, promoções, descontos
-
-- `coupons`
-- Sistema de validação de cupons
-- Regras de negócio promocionais
-
-### 4️⃣ **Cart Service** (Porta 3004)
-
-**Responsabilidades**: Carrinho de compras, sessões de compra
-
-- `shopping_carts`, `cart_items`
-- Suporte usuários anônimos e autenticados
-- Expiração automática
-
-### 5️⃣ **Order Service** (Porta 3005)
-
-**Responsabilidades**: Pedidos, processos de checkout
-
-- `orders`, `order_items`, `order_addresses`
-- Orquestração de checkout
-- Gestão de status de pedidos
-
-### 6️⃣ **Payment Service** (Porta 3006)
-
-**Responsabilidades**: Pagamentos, transações financeiras
-
-- `payments`
-- Integração com gateways de pagamento
-- Controle de transações
-
-### 7️⃣ **Review Service** (Porta 3007)
-
-**Responsabilidades**: Avaliações, comentários de produtos
-
-- `product_reviews`
-- Moderação de conteúdo
-- Integração com pedidos (compra verificada)
-
-### 8️⃣ **Audit Service** (Porta 3008)
-
-**Responsabilidades**: Logs de auditoria, compliance, LGPD
-
-- `audit_log`, `domain_events`, `service_registry`
-- Rastreabilidade completa
-- Comunicação entre serviços
-
-## 🔄 Comunicação Entre Microsserviços
-
-### **Eventos de Domínio** (Assíncrono)
-
-```sql
--- Estrutura de eventos já implementada no banco
-CREATE TABLE domain_events (
-    event_id UUID PRIMARY KEY,
-    event_type VARCHAR(100) NOT NULL,
-    aggregate_type VARCHAR(100) NOT NULL,
-    aggregate_id UUID NOT NULL,
-    event_data JSONB NOT NULL,
-    occurred_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    processed_at TIMESTAMPTZ
-);
-```
-
-### **Tipos de Eventos Definidos**:
-
-- `user.created`, `user.updated`
-- `order.created`, `order.status_changed`
-- `payment.initiated`, `payment.status_changed`
-- `product.stock_changed`
-
-### **Service Registry** (Síncrono)
-
-```sql
--- Configuração de endpoints já definida
-CREATE TABLE service_registry (
-    service_name VARCHAR(100) NOT NULL UNIQUE,
-    service_url VARCHAR(255) NOT NULL,
-    health_check_endpoint VARCHAR(100) DEFAULT '/health',
-    is_active BOOLEAN DEFAULT TRUE
-);
-```
-
-## 🛠️ Stack Tecnológica Alinhada
-
-### Backend (.NET 8)
-
-- **Framework**: ASP.NET Core (Minimal APIs)
-- **ORM**: Entity Framework Core
-- **Mensageria**: MassTransit + RabbitMQ
-- **Banco**: PostgreSQL (compartilhado inicialmente)
-- **Auth**: Keycloak + OIDC
-- **Logs**: Serilog
-- **Validação**: FluentValidation
-- **Testes**: xUnit + Testcontainers
-
-### Frontend
-
-- **Angular 20+** com Standalone Components
-- **Sintaxe**: @if, @else, @for, @switch (Control Flow)
-- **UI**: TailwindCSS v4 APENAS
-- **OIDC**: Integração com Keycloak
-- **⚠️ ZERO bibliotecas UI terceiras**
-
-## 🗓️ **ROADMAP REFINADO**
-
-### 🔧 **FASE 1: Infraestrutura Base** (Semanas 1-2)
-
-**Objetivo**: Provisionar serviços compartilhados
-
-**Entregáveis**:
-
-- ✅ Docker Compose com PostgreSQL, RabbitMQ, Keycloak
-- ✅ Schema completo do banco (já fornecido)
-- ✅ Keycloak configurado (realm: `b-commerce`)
-- ✅ Triggers e funções de eventos implementados
-
-**Critérios**: Infraestrutura estável, banco populado, eventos funcionais
-
----
-
-### 👤 **FASE 2: User Management Service** (Semanas 3-4)
-
-**Objetivo**: Primeiro microsserviço funcional
-
-**Estrutura Definida**:
-
-```csharp
-// Domain Entities já mapeadas do banco:
-// - User (com validação CPF)
-// - UserAddress
-// - UserSavedCard
-// - UserToken
-// - UserConsent (LGPD)
-```
-
-**Features**:
-
-- CRUD completo de usuários
-- Validação CPF integrada
-- Gestão de endereços e cartões
-- Consentimentos LGPD
-- Integração Keycloak (JWT)
-- Publicação eventos: `user.created`, `user.updated`
-
-**Tecnologias**: Clean Architecture, Entity Framework, FluentValidation
-
----
-
-### 📦 **FASE 3: Catalog Service** (Semanas 5-6)
-
-**Objetivo**: Catálogo robusto com busca
-
-**Estrutura Definida**:
-
-```csharp
-// Domain Entities já mapeadas:
-// - Product (com search_vector para busca)
-// - Category (hierárquica)
-// - Brand
-// - ProductVariant (cores/tamanhos)
-// - ProductImage
-```
-
-**Features**:
-
-- CRUD produtos, categorias, marcas
-- Sistema de variações (cor/tamanho)
-- Busca full-text PostgreSQL
-- Gestão de imagens
-- Controle de estoque
-- Eventos: `product.created`, `product.stock_changed`
-
----
-
-### 🌐 **FASE 4: API Gateway com YARP** (Semana 7)
-
-**Objetivo**: Ponto de entrada unificado
-
-**Features**:
-
-- Roteamento para todos os 8 serviços
-- Validação JWT centralizada
-- Rate limiting
-- CORS configurado
-- Health checks agregados
-
----
-
-### 🛒 **FASE 5: Cart Service** (Semana 8)
-
-**Objetivo**: Carrinho persistente
-
-**Estrutura Definida**:
-
-```csharp
-// Entities já mapeadas:
-// - ShoppingCart (usuário ou sessão)
-// - CartItem (referência a ProductVariant)
-```
-
-**Features**:
-
-- Carrinho para usuários autenticados e anônimos
-- Cálculo de totais automático
-- Expiração configurável
-- Integração com Catalog Service
-
----
-
-### 💰 **FASE 6: Promotion Service** (Semana 9)
-
-**Objetivo**: Sistema de cupons
-
-**Features**:
-
-- Cupons gerais e específicos por usuário
-- Validação de regras (valor mínimo, validade)
-- Controle de uso (max_uses, times_used)
-- Integração com Order Service
-
----
-
-### 📋 **FASE 7: Order Service** (Semanas 10-11)
-
-**Objetivo**: Orquestração de pedidos
-
-**Estrutura Definida**:
-
-```csharp
-// Entities já mapeadas:
-// - Order (com código único)
-// - OrderItem (snapshot do produto)
-// - OrderAddress (dados no momento da compra)
-```
-
-**Features**:
-
-- Processo completo de checkout
-- Validação de estoque via eventos
-- Aplicação de cupons
-- Snapshot de dados (produtos, endereços)
-- Estados bem definidos
-- Eventos: `order.created`, `order.status_changed`
-
----
-
-### 💳 **FASE 8: Payment Service** (Semana 12)
-
-**Objetivo**: Processamento de pagamentos
-
-**Features**:
-
-- Múltiplos métodos de pagamento
-- Integração com gateways (mock inicial)
-- Controle de transações
-- Estados de pagamento
-- Eventos: `payment.initiated`, `payment.status_changed`
-
----
-
-### ⭐ **FASE 9: Review Service** (Semana 13)
-
-**Objetivo**: Sistema de avaliações
-
-**Features**:
-
-- Reviews de produtos
-- Compra verificada (integração com Order)
-- Sistema de moderação
-- Estatísticas agregadas
-
----
-
-### 📊 **FASE 10: Audit Service Completo** (Semana 14)
-
-**Objetivo**: Observabilidade total
-
-**Features**:
-
-- Logs de auditoria completos
-- Processamento de eventos de domínio
-- Service discovery
-- Health checks consolidados
-- Limpeza automática de dados antigos
-
----
-
-### 🖥️ **FASE 11: Frontend Angular** (Semanas 15-16)
-
-**Objetivo**: Interface completa
-
-**Restrições Técnicas**:
-
-- Angular 20+ obrigatório
-- Sintaxe moderna (@if/@else/@for)
-- TailwindCSS v4 (consultar docs antes de instalar)
-- Zero bibliotecas UI terceiras
-- Componentes desenvolvidos do zero
-
-**Features**:
-
-- Autenticação OIDC
-- Catálogo com busca e filtros
-- Carrinho e checkout
-- Área do usuário
-- Histórico de pedidos
-
-## 🔮 **Pós-MVP: Evolução Arquitetural**
-
-### **Banco por Serviço**
-
-- Migrar cada serviço para PostgreSQL dedicado
-- Implementar padrão Outbox para consistência eventual
-
-### **Observabilidade Avançada**
-
-- OpenTelemetry completo
-- Prometheus + Grafana
-- Distributed tracing
-
-### **Escalabilidade**
-
-- Kubernetes + Helm
-- Service Mesh (Istio)
-- Auto-scaling baseado em métricas
-
-## 🎯 **Vantagens da Arquitetura Definida**
-
-### **Separação Clara**
-
-Cada serviço tem responsabilidades bem definidas e isoladas
-
-### **Dados Consistentes**
-
-Schema já validado com constraints, triggers e funções
-
-### **Comunicação Robusta**
-
-Sistema de eventos de domínio implementado no nível de banco
-
-### **Compliance Built-in**
-
-LGPD considerado desde o design (tabela user_consents)
-
-### **Escalabilidade Preparada**
-
-Estrutura permite migração gradual para bancos separados
-
-## 📐 **Próximos Passos Imediatos**
-
-1. **Setup Infraestrutura** (FASE 1)
-
-   - Aplicar schema completo no PostgreSQL
-   - Configurar Keycloak com clients definidos
-   - Testar triggers de eventos
-
-2. **Primeira Implementação** (FASE 2)
-
-   - User Management Service
-   - Validar arquitetura .NET 8
-   - Testar integração Keycloak
-
-3. **Padrão Estabelecido**
-   - Usar User Service como template
-   - Definir estrutura de projetos
-   - Documentar padrões de código
-
-## 🎓 **Metodologia de Ensino**
-
-Cada fase será desenvolvida com:
-
-- **Explicação conceitual** antes da implementação
-- **Código incremental** com validação contínua
-- **Testes em cada etapa**
-- **Revisão de aprendizado** antes de avançar
-- **Documentação** de decisões técnicas
-
-Lembre-se: Este é um projeto de **aprendizado profundo**, não apenas entrega de software!
-
 -- =====================================================================
 -- REFATORAÇÃO PARA ARQUITETURA DE MICROSSERVIÇOS - E-COMMERCE
 -- Versão: 3.0 - Microsserviços
@@ -449,36 +23,32 @@ CREATE TYPE address_type_enum AS ENUM ('shipping', 'billing');
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
-NEW.updated_at = CURRENT_TIMESTAMP;
-RETURN NEW;
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
 END;
-
-$$
-LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Validação CPF
 CREATE OR REPLACE FUNCTION is_cpf_valid(cpf TEXT)
-RETURNS BOOLEAN AS
-$$
-
+RETURNS BOOLEAN AS $$
 DECLARE
-cpf_clean TEXT;
-cpf_array INT[];
-sum1 INT := 0;
-sum2 INT := 0;
-i INT;
+    cpf_clean TEXT;
+    cpf_array INT[];
+    sum1 INT := 0;
+    sum2 INT := 0;
+    i INT;
 BEGIN
-cpf_clean := REGEXP_REPLACE(cpf, '[^0-9]', '', 'g');
-IF LENGTH(cpf_clean) != 11 OR cpf_clean ~ '(\d)\1{10}' THEN
-RETURN FALSE;
-END IF;
-cpf_array := STRING_TO_ARRAY(cpf_clean, NULL)::INT[];
-FOR i IN 1..9 LOOP
-sum1 := sum1 + cpf_array[i] \* (11 - i);
-END LOOP;
-sum1 := 11 - (sum1 % 11);
-IF sum1 >= 10 THEN sum1 := 0; END IF;
-IF sum1 != cpf_array[10] THEN RETURN FALSE; END IF;
+    cpf_clean := REGEXP_REPLACE(cpf, '[^0-9]', '', 'g');
+    IF LENGTH(cpf_clean) != 11 OR cpf_clean ~ '(\d)\1{10}' THEN
+        RETURN FALSE;
+    END IF;
+    cpf_array := STRING_TO_ARRAY(cpf_clean, NULL)::INT[];
+    FOR i IN 1..9 LOOP
+        sum1 := sum1 + cpf_array[i] * (11 - i);
+    END LOOP;
+    sum1 := 11 - (sum1 % 11);
+    IF sum1 >= 10 THEN sum1 := 0; END IF;
+    IF sum1 != cpf_array[10] THEN RETURN FALSE; END IF;
 
     FOR i IN 1..10 LOOP
         sum2 := sum2 + cpf_array[i] * (12 - i);
@@ -488,11 +58,8 @@ IF sum1 != cpf_array[10] THEN RETURN FALSE; END IF;
     IF sum2 != cpf_array[11] THEN RETURN FALSE; END IF;
 
     RETURN TRUE;
-
 END;
-
-$$
-LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
 -- TABELAS DO USER MANAGEMENT SERVICE
 
@@ -646,19 +213,15 @@ CREATE TRIGGER set_timestamp_brands BEFORE UPDATE ON brands FOR EACH ROW EXECUTE
 
 -- Função para atualizar vetor de busca
 CREATE OR REPLACE FUNCTION trigger_update_products_search_vector()
-RETURNS TRIGGER AS
-$$
-
+RETURNS TRIGGER AS $$
 BEGIN
-NEW.search_vector =
-setweight(to_tsvector('portuguese', COALESCE(NEW.name, '')), 'A') ||
-setweight(to_tsvector('portuguese', COALESCE(NEW.base_sku, '')), 'A') ||
-setweight(to_tsvector('portuguese', COALESCE(NEW.description, '')), 'B');
-RETURN NEW;
+    NEW.search_vector =
+        setweight(to_tsvector('portuguese', COALESCE(NEW.name, '')), 'A') ||
+        setweight(to_tsvector('portuguese', COALESCE(NEW.base_sku, '')), 'A') ||
+        setweight(to_tsvector('portuguese', COALESCE(NEW.description, '')), 'B');
+    RETURN NEW;
 END;
-
-$$
-LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Tabela de produtos
 CREATE TABLE products (
@@ -833,15 +396,11 @@ CREATE TYPE order_status_enum AS ENUM ('pending', 'processing', 'shipped', 'deli
 
 -- Função para gerar códigos de pedido
 CREATE OR REPLACE FUNCTION generate_order_code()
-RETURNS VARCHAR AS
-$$
-
+RETURNS VARCHAR AS $$
 BEGIN
-RETURN 'ORD-' || TO_CHAR(CURRENT_DATE, 'YYYY-') || UPPER(SUBSTRING(REPLACE(gen_random_uuid()::text, '-', ''), 1, 8));
+  RETURN 'ORD-' || TO_CHAR(CURRENT_DATE, 'YYYY-') || UPPER(SUBSTRING(REPLACE(gen_random_uuid()::text, '-', ''), 1, 8));
 END;
-
-$$
-LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql VOLATILE;
 
 CREATE TABLE orders (
     order_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1007,7 +566,7 @@ CREATE INDEX idx_domain_events_processed ON domain_events (processed_at) WHERE p
 
 -- View para estatísticas de produto (pode ser materializada)
 CREATE VIEW product_statistics AS
-SELECT
+SELECT 
     p.product_id,
     p.name,
     p.base_sku,
@@ -1017,8 +576,8 @@ SELECT
 FROM products p
 LEFT JOIN product_reviews pr ON p.product_id = pr.product_id AND pr.is_approved = true
 LEFT JOIN order_items oi ON EXISTS (
-    SELECT 1 FROM product_variants pv
-    WHERE pv.product_id = p.product_id
+    SELECT 1 FROM product_variants pv 
+    WHERE pv.product_id = p.product_id 
     AND pv.product_variant_id = oi.product_variant_id
 )
 LEFT JOIN orders o ON oi.order_id = o.order_id
@@ -1080,10 +639,10 @@ BEGIN
     INSERT INTO domain_events (event_type, aggregate_type, aggregate_id, event_data)
     VALUES (p_event_type, p_aggregate_type, p_aggregate_id, p_event_data)
     RETURNING domain_events.event_id INTO event_id;
-
+    
     -- Aqui poderia haver uma notificação para o message broker
     -- NOTIFY domain_events, event_id::text;
-
+    
     RETURN event_id;
 END;
 $ LANGUAGE plpgsql;
@@ -1092,10 +651,10 @@ $ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION mark_event_processed(p_event_id UUID)
 RETURNS BOOLEAN AS $
 BEGIN
-    UPDATE domain_events
-    SET processed_at = CURRENT_TIMESTAMP
+    UPDATE domain_events 
+    SET processed_at = CURRENT_TIMESTAMP 
     WHERE event_id = p_event_id AND processed_at IS NULL;
-
+    
     RETURN FOUND;
 END;
 $ LANGUAGE plpgsql;
@@ -1137,7 +696,7 @@ BEGIN
             );
         END IF;
     END IF;
-
+    
     RETURN COALESCE(NEW, OLD);
 END;
 $ LANGUAGE plpgsql;
@@ -1179,7 +738,7 @@ BEGIN
             )
         );
     END IF;
-
+    
     RETURN COALESCE(NEW, OLD);
 END;
 $ LANGUAGE plpgsql;
@@ -1224,7 +783,7 @@ BEGIN
             )
         );
     END IF;
-
+    
     RETURN COALESCE(NEW, OLD);
 END;
 $ LANGUAGE plpgsql;
@@ -1257,24 +816,24 @@ DECLARE
 BEGIN
     -- Esta seria uma transação distribuída em uma implementação real
     -- Aqui é uma simplificação para demonstrar a estrutura
-
+    
     -- 1. Criar o pedido
     INSERT INTO orders (user_id, items_total_amount, shipping_amount)
     SELECT p_user_id, SUM(ci.quantity * ci.unit_price), 30.00
-    FROM cart_items ci
+    FROM cart_items ci 
     WHERE ci.cart_id = p_cart_id
     RETURNING order_id, grand_total_amount INTO v_order_id, v_total_amount;
-
+    
     -- 2. Copiar itens do carrinho para o pedido
     INSERT INTO order_items (order_id, product_variant_id, item_sku, item_name, quantity, unit_price)
     SELECT v_order_id, ci.product_variant_id, 'TEMP_SKU', 'TEMP_NAME', ci.quantity, ci.unit_price
-    FROM cart_items ci
+    FROM cart_items ci 
     WHERE ci.cart_id = p_cart_id;
-
+    
     -- 3. Criar endereços do pedido
     INSERT INTO order_addresses (order_id, address_type, recipient_name, postal_code, street, street_number, neighborhood, city, state_code)
-    VALUES
-        (v_order_id, 'shipping',
+    VALUES 
+        (v_order_id, 'shipping', 
          p_shipping_address_data->>'recipient_name',
          p_shipping_address_data->>'postal_code',
          p_shipping_address_data->>'street',
@@ -1282,7 +841,7 @@ BEGIN
          p_shipping_address_data->>'neighborhood',
          p_shipping_address_data->>'city',
          p_shipping_address_data->>'state_code'),
-        (v_order_id, 'billing',
+        (v_order_id, 'billing', 
          p_billing_address_data->>'recipient_name',
          p_billing_address_data->>'postal_code',
          p_billing_address_data->>'street',
@@ -1290,15 +849,15 @@ BEGIN
          p_billing_address_data->>'neighborhood',
          p_billing_address_data->>'city',
          p_billing_address_data->>'state_code');
-
+    
     -- 4. Iniciar pagamento
     INSERT INTO payments (order_id, user_id, method, amount, method_details)
     VALUES (v_order_id, p_user_id, p_payment_method, v_total_amount, p_payment_details)
     RETURNING payment_id INTO v_payment_id;
-
+    
     -- 5. Limpar carrinho
     DELETE FROM cart_items WHERE cart_id = p_cart_id;
-
+    
     -- 6. Retornar resultado
     v_result = jsonb_build_object(
         'success', true,
@@ -1306,9 +865,9 @@ BEGIN
         'payment_id', v_payment_id,
         'total_amount', v_total_amount
     );
-
+    
     RETURN v_result;
-
+    
 EXCEPTION
     WHEN OTHERS THEN
         RETURN jsonb_build_object(
@@ -1328,16 +887,16 @@ RETURNS INTEGER AS $
 DECLARE
     deleted_count INTEGER;
 BEGIN
-    DELETE FROM domain_events
-    WHERE processed_at IS NOT NULL
+    DELETE FROM domain_events 
+    WHERE processed_at IS NOT NULL 
     AND processed_at < CURRENT_TIMESTAMP - INTERVAL '1 day' * days_old;
-
+    
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
+    
     INSERT INTO audit_log (service_name, table_name, operation_type, change_description)
-    VALUES ('audit', 'domain_events', 'DELETE',
+    VALUES ('audit', 'domain_events', 'DELETE', 
             FORMAT('Cleaned up %s old processed events older than %s days', deleted_count, days_old));
-
+    
     RETURN deleted_count;
 END;
 $ LANGUAGE plpgsql;
@@ -1348,12 +907,12 @@ RETURNS INTEGER AS $
 DECLARE
     deleted_count INTEGER;
 BEGIN
-    DELETE FROM shopping_carts
-    WHERE expires_at IS NOT NULL
+    DELETE FROM shopping_carts 
+    WHERE expires_at IS NOT NULL 
     AND expires_at < CURRENT_TIMESTAMP;
-
+    
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
+    
     RETURN deleted_count;
 END;
 $ LANGUAGE plpgsql;
@@ -1417,4 +976,3 @@ DESAFIOS CONSIDERADOS:
 - Monitoramento e observabilidade
 - Versionamento de APIs entre serviços
 */
-$$
