@@ -31,4 +31,10 @@ app.MapGet("/", () => "UserService API is running!");
 // Map health check endpoints
 app.MapHealthEndpoints();
 
+// Map test endpoints
+app.MapTestEndpoints();
+
+// Map authentication endpoints
+app.MapAuthEndpoints();
+
 app.Run();

@@ -341,6 +341,54 @@ namespace UserService.Infrastructure.Services
             return false;
         }
 
+        public async Task<KeycloakAuthResult?> AuthenticateUserAsync(string email, string password)
+        {
+            try
+            {
+                var payload = new Dictionary<string, string>
+                {
+                    ["grant_type"] = "password",
+                    ["client_id"] = _config.ClientId,
+                    ["client_secret"] = _config.ClientSecret,
+                    ["username"] = email,
+                    ["password"] = password
+                };
+
+                var content = new FormUrlEncodedContent(payload);
+                var response = await _httpClient.PostAsync($"{_config.BaseUrl}/protocol/openid-connect/token", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var tokenResponse = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent, _jsonOptions);
+                    
+                    if (tokenResponse != null)
+                    {
+                        return new KeycloakAuthResult
+                        {
+                            AccessToken = tokenResponse.GetValueOrDefault("access_token")?.ToString() ?? string.Empty,
+                            RefreshToken = tokenResponse.GetValueOrDefault("refresh_token")?.ToString() ?? string.Empty,
+                            ExpiresIn = int.TryParse(tokenResponse.GetValueOrDefault("expires_in")?.ToString(), out var expiresIn) ? expiresIn : 0,
+                            TokenType = tokenResponse.GetValueOrDefault("token_type")?.ToString() ?? "Bearer",
+                            Scope = tokenResponse.GetValueOrDefault("scope")?.ToString() ?? string.Empty
+                        };
+                    }
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Falha na autenticação do usuário {Email}: {StatusCode} - {Error}", email, response.StatusCode, errorContent);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao autenticar usuário no Keycloak: {Email}", email);
+                return null;
+            }
+        }
+
         public async Task<bool> ValidateTokenAsync(string token)
         {
             try

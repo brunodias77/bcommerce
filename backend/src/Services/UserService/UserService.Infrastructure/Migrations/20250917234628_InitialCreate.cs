@@ -188,7 +188,7 @@ namespace UserService.Infrastructure.Migrations
                 table: "user_addresses",
                 columns: new[] { "user_id", "type" },
                 unique: true,
-                filter: "is_default = true AND deleted_at IS NULL");
+                filter: "\"is_default\" = true AND \"deleted_at\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_consents_user_id",
@@ -212,7 +212,7 @@ namespace UserService.Infrastructure.Migrations
                 table: "user_saved_cards",
                 column: "user_id",
                 unique: true,
-                filter: "is_default = true AND deleted_at IS NULL");
+                filter: "\"is_default\" = true AND \"deleted_at\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_tokens_expires_at",
@@ -240,7 +240,7 @@ namespace UserService.Infrastructure.Migrations
                 table: "users",
                 column: "email",
                 unique: true,
-                filter: "deleted_at IS NULL");
+                filter: "\"deleted_at\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_users_keycloak_id",
@@ -257,7 +257,7 @@ namespace UserService.Infrastructure.Migrations
                 name: "IX_users_status",
                 table: "users",
                 column: "status",
-                filter: "deleted_at IS NULL");
+                filter: "\"deleted_at\" IS NULL");
         }
 
         /// <inheritdoc />

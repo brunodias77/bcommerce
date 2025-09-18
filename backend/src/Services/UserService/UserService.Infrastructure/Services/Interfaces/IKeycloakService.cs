@@ -94,6 +94,14 @@ namespace UserService.Infrastructure.Services.Interfaces
         Task<bool> RemoveRolesFromUserAsync(string keycloakUserId, IEnumerable<string> roles);
 
         /// <summary>
+        /// Autentica um usuário no Keycloak usando email e senha
+        /// </summary>
+        /// <param name="email">Email do usuário</param>
+        /// <param name="password">Senha do usuário</param>
+        /// <returns>Dados de autenticação ou null se credenciais inválidas</returns>
+        Task<KeycloakAuthResult?> AuthenticateUserAsync(string email, string password);
+
+        /// <summary>
         /// Valida se um token JWT é válido no Keycloak
         /// </summary>
         /// <param name="token">Token JWT para validar</param>
@@ -128,5 +136,17 @@ namespace UserService.Infrastructure.Services.Interfaces
         public DateTime CreatedTimestamp { get; set; }
         public IEnumerable<string> Roles { get; set; } = new List<string>();
         public Dictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
+    }
+
+    /// <summary>
+    /// DTO para representar o resultado da autenticação no Keycloak
+    /// </summary>
+    public class KeycloakAuthResult
+    {
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public int ExpiresIn { get; set; }
+        public string TokenType { get; set; } = "Bearer";
+        public string Scope { get; set; } = string.Empty;
     }
 }
