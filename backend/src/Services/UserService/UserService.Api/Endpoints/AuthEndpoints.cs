@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using BuildingBlocks.Abstractions;
 using UserService.Application.Commands.Users.CreateUser;
+using UserService.Application.Commands.Users.LoginUser;
 
 namespace UserService.Api.Endpoints;
 
@@ -28,6 +29,16 @@ public static class AuthEndpoints
             .Produces<CreateUserResponse>(201)
             .ProducesValidationProblem(400)
             .Produces(409)
+            .Produces(500);
+
+        // Endpoint de login de usuário
+        group.MapPost("/login", LoginUser)
+            .WithName("LoginUser")
+            .WithSummary("Autentica um usuário no sistema")
+            .WithDescription("Realiza a autenticação do usuário via Keycloak e retorna tokens JWT")
+            .Produces<LoginUserResponse>(200)
+            .ProducesValidationProblem(400)
+            .Produces(401)
             .Produces(500);
     }
 
@@ -106,6 +117,93 @@ public static class AuthEndpoints
                 statusCode: 500);
         }
     }
+
+    /// <summary>
+    /// Autentica um usuário no sistema
+    /// </summary>
+    /// <param name="request">Dados de login do usuário</param>
+    /// <param name="mediator">Mediator para envio de commands</param>
+    /// <param name="logger">Logger para registrar eventos</param>
+    /// <returns>Resultado da autenticação com tokens JWT</returns>
+    private static async Task<IResult> LoginUser(
+        [FromBody] LoginUserRequest request,
+        IMediator mediator,
+        ILogger<LoginUserRequest> logger)
+    {
+        try
+        {
+            logger.LogInformation("Iniciando autenticação de usuário via API: {Email}", request.Email);
+
+            // Validar dados de entrada
+            var validationResults = new List<ValidationResult>();
+            var validationContext = new ValidationContext(request);
+            
+            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            {
+                var errors = validationResults.Select(vr => vr.ErrorMessage).ToList();
+                logger.LogWarning("Dados de entrada inválidos para login: {Errors}", string.Join(", ", errors));
+                
+                return Results.ValidationProblem(validationResults.ToDictionary(
+                    vr => vr.MemberNames.FirstOrDefault() ?? "Unknown",
+                    vr => new[] { vr.ErrorMessage ?? "Erro de validação" }
+                ));
+            }
+
+            // Criar o command
+            var command = new LoginUserCommand
+            {
+                Email = request.Email,
+                Password = request.Password
+            };
+
+            // Enviar command via Mediator
+            var response = await mediator.Send(command);
+
+            if (response.Success)
+            {
+                logger.LogInformation("Usuário autenticado com sucesso via API: {Email}", request.Email);
+                return Results.Ok(response);
+            }
+            else
+            {
+                logger.LogWarning("Falha na autenticação do usuário: {Email} - {Message}", request.Email, response.Message);
+                return Results.Unauthorized();
+            }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex, "Credenciais inválidas para login: {Email}", request.Email);
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro inesperado ao autenticar usuário via API: {Email}", request.Email);
+            
+            return Results.Problem(
+                detail: "Erro interno do servidor ao autenticar usuário",
+                title: "Erro interno",
+                statusCode: 500);
+        }
+    }
+}
+
+/// <summary>
+/// Request para login de usuário
+/// </summary>
+public class LoginUserRequest
+{
+    /// <summary>
+    /// Email do usuário
+    /// </summary>
+    [Required(ErrorMessage = "O email é obrigatório")]
+    [EmailAddress(ErrorMessage = "Email deve ter um formato válido")]
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Senha do usuário
+    /// </summary>
+    [Required(ErrorMessage = "A senha é obrigatória")]
+    public string Password { get; set; } = string.Empty;
 }
 
 /// <summary>

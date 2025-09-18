@@ -66,9 +66,8 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Unit>
         var firstName = nameParts[0];
         var lastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : firstName; // Se não há sobrenome, usa o primeiro nome
 
-        string? keycloakUserId = null;
-        
-        // 1. Tenta criar o usuário no Keycloak (com fallback)
+        // 1. Cria o usuário no Keycloak (obrigatório)
+        string keycloakUserId;
         try
         {
             _logger.LogInformation("Criando usuário no Keycloak: {Email}", request.Email);
@@ -81,23 +80,21 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Unit>
 
             if (string.IsNullOrEmpty(keycloakUserId))
             {
-                _logger.LogWarning("Keycloak não retornou ID do usuário, continuando apenas com criação local: {Email}", request.Email);
+                _logger.LogError("Keycloak não retornou ID do usuário: {Email}", request.Email);
+                throw new InvalidOperationException("Falha na criação do usuário no sistema de autenticação. Tente novamente.");
             }
-            else
-            {
-                _logger.LogInformation("Usuário criado no Keycloak com sucesso. ID: {KeycloakUserId}", keycloakUserId);
-            }
+
+            _logger.LogInformation("Usuário criado no Keycloak com sucesso. ID: {KeycloakUserId}", keycloakUserId);
         }
-        catch (Exception keycloakEx)
+        catch (Exception keycloakEx) when (keycloakEx is not InvalidOperationException)
         {
-            _logger.LogWarning(keycloakEx, "Falha ao criar usuário no Keycloak, continuando apenas com criação local: {Email}", request.Email);
-            keycloakUserId = null;
+            _logger.LogError(keycloakEx, "Falha ao criar usuário no Keycloak: {Email}", request.Email);
+            throw new InvalidOperationException("Falha na criação do usuário no sistema de autenticação. Tente novamente.", keycloakEx);
         }
         
         try
         {
-
-            // 2. Cria o usuário localmente (com ou sem Keycloak)
+            // 2. Cria o usuário localmente (apenas após sucesso no Keycloak)
             var user = new User
             {
                 UserId = Guid.NewGuid(),
@@ -111,7 +108,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Unit>
                 NewsletterOptIn = false, // TODO: Adicionar campo no command se necessário
                 Status = UserStatus.Ativo,
                 Role = UserRole.Customer,
-                KeycloakId = !string.IsNullOrEmpty(keycloakUserId) ? Guid.Parse(keycloakUserId) : null // Armazena o ID do Keycloak se disponível
+                KeycloakId = Guid.Parse(keycloakUserId) // Armazena o ID do Keycloak (sempre disponível neste ponto)
             };
 
             // Adiciona o usuário ao contexto
@@ -120,16 +117,8 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Unit>
             // Salva as alterações no banco de dados
             await _context.SaveChangesAsync(cancellationToken);
 
-            if (!string.IsNullOrEmpty(keycloakUserId))
-            {
-                _logger.LogInformation("Usuário criado com sucesso localmente e no Keycloak. Email: {Email}, KeycloakId: {KeycloakUserId}", 
-                    request.Email, keycloakUserId);
-            }
-            else
-            {
-                _logger.LogInformation("Usuário criado com sucesso localmente (sem integração Keycloak). Email: {Email}", 
-                    request.Email);
-            }
+            _logger.LogInformation("Usuário criado com sucesso localmente e no Keycloak. Email: {Email}, KeycloakId: {KeycloakUserId}", 
+                request.Email, keycloakUserId);
 
             return Unit.Value;
         }
@@ -137,19 +126,16 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Unit>
         {
             _logger.LogError(ex, "Erro inesperado ao criar usuário: {Email}", request.Email);
             
-            // Se falhou na criação local mas sucedeu no Keycloak, tenta fazer rollback
-            if (!string.IsNullOrEmpty(keycloakUserId))
+            // Se falhou na criação local, faz rollback do Keycloak
+            _logger.LogWarning("Tentando fazer rollback do usuário no Keycloak: {KeycloakUserId}", keycloakUserId);
+            try
             {
-                _logger.LogWarning("Tentando fazer rollback do usuário no Keycloak: {KeycloakUserId}", keycloakUserId);
-                try
-                {
-                    await _keycloakService.DeleteUserAsync(keycloakUserId);
-                    _logger.LogInformation("Rollback do Keycloak realizado com sucesso: {KeycloakUserId}", keycloakUserId);
-                }
-                catch (Exception rollbackEx)
-                {
-                    _logger.LogError(rollbackEx, "Falha no rollback do Keycloak para usuário: {KeycloakUserId}", keycloakUserId);
-                }
+                await _keycloakService.DeleteUserAsync(keycloakUserId);
+                _logger.LogInformation("Rollback do Keycloak realizado com sucesso: {KeycloakUserId}", keycloakUserId);
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogError(rollbackEx, "Falha no rollback do Keycloak para usuário: {KeycloakUserId}", keycloakUserId);
             }
             
             // Re-lança a exceção original sem envolver em InvalidOperationException
