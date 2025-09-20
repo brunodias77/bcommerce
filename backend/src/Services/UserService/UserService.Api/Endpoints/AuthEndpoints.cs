@@ -2,9 +2,10 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using BuildingBlocks.Abstractions;
-using UserService.Api.Dtos.Requests;
-using UserService.Api.Dtos.Responses;
 using UserService.Application.Commands.Users.CreateUser;
+using UserService.Application.Commands.Users.LoginUser;
+using UserService.Application.Dtos.Requests;
+using UserService.Application.Dtos.Responses;
 using UserService.Domain.Exceptions;
 
 namespace UserService.Api.Endpoints;
@@ -27,16 +28,16 @@ public static class AuthEndpoints
         .ProducesValidationProblem(400)
         .Produces(409)
         .Produces(500);
-        
-                 // Endpoint de login de usuário
-         group.MapPost("/login", LoginUser)
-             .WithName("LoginUser")
-             .WithSummary("Autentica um usuário no sistema")
-             .WithDescription("Realiza a autenticação do usuário via Keycloak e retorna tokens JWT")
-             .Produces<LoginUserResponse>(200)
-             .ProducesValidationProblem(400)
-             .Produces(401)
-             .Produces(500);
+
+        // Endpoint de login de usuário
+        group.MapPost("/login", LoginUser)
+            .WithName("LoginUser")
+            .WithSummary("Autentica um usuário no sistema")
+            .WithDescription("Realiza a autenticação do usuário via Keycloak e retorna tokens JWT")
+            .Produces<LoginUserResponse>(200)
+            .ProducesValidationProblem(400)
+            .Produces(401)
+            .Produces(500);
 
     }
 
@@ -51,7 +52,7 @@ public static class AuthEndpoints
 
         // Tenta validar o objeto usando as DataAnnotations
         bool isValid = Validator.TryValidateObject(request, context, results, true);
-        
+
         if (!isValid)
         {
             // Retorna 400 com os erros de validação
@@ -60,7 +61,7 @@ public static class AuthEndpoints
                 Errors = results.Select(r => r.ErrorMessage).ToList()
             });
         }
-        
+
         try
         {
             logger.LogInformation("Iniciando criação de usuário via endpoint para email: {Email}", request.Email);
@@ -161,7 +162,7 @@ public static class AuthEndpoints
 
         // Tenta validar o objeto usando as DataAnnotations
         bool isValid = Validator.TryValidateObject(request, context, results, true);
-        
+
         if (!isValid)
         {
             // Retorna 400 com os erros de validação
@@ -170,8 +171,36 @@ public static class AuthEndpoints
                 Errors = results.Select(r => r.ErrorMessage).ToList()
             });
         }
-        
-        return null;
+
+        try
+        {
+            var command = new LoginUserCommand{
+                Email = request.Email,
+                Password = request.Password
+            };
+
+            var result = await mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("User login successful for email: {Email}", request.Email);
+                return Results.Ok(result.Value);
+            }
+            else
+            {
+                logger.LogWarning("User login failed for email: {Email}. Error: {Error}", request.Email, result.FirstError);
+                return Results.BadRequest(new { message = result.FirstError });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during user login for email: {Email}", request.Email);
+            return Results.Problem(
+                title: "Internal Server Error",
+                detail: "An unexpected error occurred during login",
+                statusCode: 500
+            );
+        }
     }
 }
 

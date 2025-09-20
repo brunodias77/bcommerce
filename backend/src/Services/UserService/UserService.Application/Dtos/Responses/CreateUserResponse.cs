@@ -1,4 +1,4 @@
-namespace UserService.Api.Dtos.Responses;
+namespace UserService.Application.Dtos.Responses;
 
 /// <summary>
 /// DTO para resposta de criação de usuário

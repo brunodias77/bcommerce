@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace UserService.Api.Dtos.Requests;
 
-/// <summary>
-/// DTO para requisição de criação de usuário
-/// </summary>
+namespace UserService.Application.Dtos.Requests;
+
 public class CreateUserRequest
 {
     /// <summary>
