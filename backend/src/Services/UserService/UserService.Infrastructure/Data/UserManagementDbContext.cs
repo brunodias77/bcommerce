@@ -134,16 +134,7 @@ namespace UserService.Infrastructure.Data;
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Configuração global para timestamps
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate();
-                }
-            }
+            // Timestamps são gerenciados manualmente pelo método UpdateTimestamps()
         }
 
         public override int SaveChanges()
