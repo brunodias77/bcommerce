@@ -12,10 +12,10 @@ public static class ApplicationDependencyInjection
     private static void AddMediator(IServiceCollection services)
     {
         // Register our custom Mediator implementation
-        // services.AddMediator(
-        //     typeof(Dbets.Application.Commands.Users.CreateUserCommand.CreateUserCommand).Assembly, // Application assembly
-        //     typeof(Dbets.Domain.Mediator.IMediator).Assembly, // Domain assembly
-        //     typeof(Dbets.Infrastructure.Mediator.Mediator).Assembly // Infrastructure assembly
-        // );
+        services.AddMediator(
+            typeof(UserService.Application.Commands.Users.CreateUser.CreateUserCommand).Assembly, // Application assembly
+            typeof(BuildingBlocks.Abstractions.IMediator).Assembly, // BuildingBlocks assembly
+            typeof(BuildingBlocks.Mediator.Mediator).Assembly // Mediator implementation assembly
+        );
     }
 }
