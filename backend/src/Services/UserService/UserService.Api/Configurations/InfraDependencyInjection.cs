@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UserService.Infrastructure.Data;
 using BuildingBlocks.Abstractions;
-using UserService.Infrastructure.Services;
-using UserService.Infrastructure.Services.Interfaces;
+
 using UserService.Application.Services;
 using UserService.Application.Services.Interfaces;
 
@@ -46,8 +45,8 @@ public static class InfraDependencyInjection
         // services.AddScoped<IUserRepository, UserRepository>();
         
         // Serviços de infraestrutura
-        services.AddScoped<IKeycloakService, KeycloakService>();
-        services.AddHttpClient<KeycloakService>();
+        // services.AddScoped<IKeycloakService, KeycloakService>();
+        // services.AddHttpClient<KeycloakService>();
         services.AddScoped<IPasswordEncripter, PasswordEncripter>();
         // services.AddScoped<IJwtService, JwtService>();
         // services.AddScoped<IPasswordHasher, PasswordHasher>();
