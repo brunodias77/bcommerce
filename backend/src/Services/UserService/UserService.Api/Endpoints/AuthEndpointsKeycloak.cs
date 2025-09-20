@@ -10,16 +10,23 @@ public static class AuthEndpointsKeycloak
 {
     public static void MapAuthEndpointsKeycloak(this WebApplication app)
     {
-        var auth = app.MapGroup("/api/auth")
+        var auth = app.MapGroup("/api/auth/keycloak")
             .WithTags("Authentication")
             .WithOpenApi();
-        
+
         auth.MapPost("/register", RegisterAsync)
             .WithName("Register")
             .WithSummary("Register new user account")
             .Produces<UserResponse>(201)
             .Produces<ProblemDetails>(400)
             .Produces<ProblemDetails>(409);
+
+        auth.MapPost("/login", LoginAsync)
+            .WithName("Login")
+            .WithSummary("Authenticate user and get tokens")
+            .Produces<LoginResponse>(200)
+            .Produces<ProblemDetails>(400)
+            .Produces<ProblemDetails>(401);
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -29,7 +36,7 @@ public static class AuthEndpointsKeycloak
     {
         try
         {
-            if (string.IsNullOrEmpty(request.Email) || 
+            if (string.IsNullOrEmpty(request.Email) ||
                 string.IsNullOrEmpty(request.Password) ||
                 string.IsNullOrEmpty(request.FirstName) ||
                 string.IsNullOrEmpty(request.LastName))
@@ -41,10 +48,10 @@ public static class AuthEndpointsKeycloak
                     Status = 400
                 });
             }
-            
+
             // Verifique se o usuário já existe
             var existingUser = await keycloakService.GetUserByEmailAsync(request.Email);
-            
+
             if (existingUser != null)
             {
                 return Results.Conflict(new ProblemDetails
@@ -54,7 +61,7 @@ public static class AuthEndpointsKeycloak
                     Status = 409
                 });
             }
-            
+
             var createUserRequest = new CreateUserRequest
             {
                 Username = request.Email,
@@ -66,10 +73,10 @@ public static class AuthEndpointsKeycloak
                 EmailVerified = false,
                 Roles = new List<string> { "user" } // Default role
             };
-            
+
             var userId = await keycloakService.CreateUserAsync(createUserRequest);
             var user = await keycloakService.GetUserByIdAsync(userId);
-            
+
             logger.LogInformation("Novo usuário registrado: {Email}", request.Email);
             return Results.Created($"/api/users/{userId}", user);
         }
@@ -82,6 +89,47 @@ public static class AuthEndpointsKeycloak
                 statusCode: 500);
         }
     }
+
+    private static async Task<IResult> LoginAsync(
+        LoginRequest request,
+        IKeycloakService keycloakService,
+        ILogger<Program> logger)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Requisição inválida",
+                    Detail = "E-mail e senha são obrigatórios",
+                    Status = 400
+                });
+            }
+
+            var response = await keycloakService.LoginAsync(request);
+
+            logger.LogInformation("Usuário {Email} autenticado com sucesso", request.Email);
+            return Results.Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning("Falha de login para o usuário {Email}: {Message}", request.Email, ex.Message);
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro durante o login para o usuário {Email}", request.Email);
+            return Results.Problem(
+                title: "Erro de login",
+                detail: "Ocorreu um erro durante o processo de autenticação",
+                statusCode: 500);
+        }
+    }
+
+
+
+
 
 }
 

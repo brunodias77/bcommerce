@@ -1,22 +1,180 @@
-// using System.ComponentModel.DataAnnotations;
-// using System.Text.RegularExpressions;
-// using Microsoft.AspNetCore.Mvc;
-// using BuildingBlocks.Abstractions;
-// using UserService.Application.Commands.Users.CreateUser;
-// using UserService.Application.Commands.Users.LoginUser;
-//
-// namespace UserService.Api.Endpoints;
+
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
+using BuildingBlocks.Abstractions;
+using UserService.Api.Dtos.Requests;
+using UserService.Api.Dtos.Responses;
+using UserService.Application.Commands.Users.CreateUser;
+using UserService.Domain.Exceptions;
+
+namespace UserService.Api.Endpoints;
 //
 // /// <summary>
 // /// Endpoints de autenticação e gerenciamento de usuários
 // /// </summary>
-// public static class AuthEndpoints
-// {
-//     /// <summary>
-//     /// Registra os endpoints de autenticação
-//     /// </summary>
-//     /// <param name="app">WebApplication instance</param>
-//     public static void MapAuthEndpoints(this WebApplication app)
+public static class AuthEndpoints
+{
+    public static void MapAuthEndpoints(this WebApplication app)
+    {
+        var group = app.MapGroup("/api/auth")
+            .WithTags("Authentication");
+
+        group.MapPost("/register", CreateUser)
+        .WithName("CreateUser")
+        .WithSummary("Cria um novo usuário no sistema")
+        .WithDescription("Registra um novo usuário no sistema, criando primeiro no Keycloak e depois localmente")
+        .Produces<CreateUserResponse>(201)
+        .ProducesValidationProblem(400)
+        .Produces(409)
+        .Produces(500);
+        
+                 // Endpoint de login de usuário
+         group.MapPost("/login", LoginUser)
+             .WithName("LoginUser")
+             .WithSummary("Autentica um usuário no sistema")
+             .WithDescription("Realiza a autenticação do usuário via Keycloak e retorna tokens JWT")
+             .Produces<LoginUserResponse>(200)
+             .ProducesValidationProblem(400)
+             .Produces(401)
+             .Produces(500);
+
+    }
+
+
+    private static async Task<IResult> CreateUser(
+    [FromBody] CreateUserRequest request,
+    IMediator mediator,
+    ILogger<CreateUserRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Tenta validar o objeto usando as DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+        
+        if (!isValid)
+        {
+            // Retorna 400 com os erros de validação
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+        
+        try
+        {
+            logger.LogInformation("Iniciando criação de usuário via endpoint para email: {Email}", request.Email);
+
+            // Validação básica de entrada
+            if (request == null)
+            {
+                logger.LogWarning("Request nulo recebido no endpoint CreateUser");
+                return Results.BadRequest("Dados da requisição são obrigatórios");
+            }
+
+            // Mapear CreateUserRequest para CreateUserCommand
+            var command = new CreateUserCommand(
+                FirstName: request.FirstName,
+                LastName: request.LastName,
+                Email: request.Email,
+                Password: request.Password,
+                NewsletterOptIn: request.NewsletterOptIn
+            );
+
+            // Enviar comando via MediatR
+            var result = await mediator.Send(command);
+
+            // Tratar o resultado das REGRAS DE NEGÓCIO
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Usuário criado com sucesso. ID: {UserId}, Email: {Email}", result.Value, request.Email);
+                return Results.Created($"/api/users/{result.Value}", new CreateUserResponse
+                {
+                    UserId = result.Value,
+                    Message = "Usuário criado com sucesso",
+                    Email = request.Email,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName
+                });
+            }
+
+            // Tratar diferentes tipos de erro de REGRAS DE NEGÓCIO baseado na mensagem
+            var errorMessage = result.FirstError;
+
+            if (errorMessage.Contains("já existe") || errorMessage.Contains("já existente"))
+            {
+                logger.LogWarning("Tentativa de criar usuário com email já existente: {Email}", request.Email);
+                return Results.Conflict(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("campos obrigatórios") || errorMessage.Contains("validação"))
+            {
+                logger.LogWarning("Erro de validação na criação de usuário: {Error}", errorMessage);
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            // Outros erros de regras de negócio são tratados como Bad Request
+            logger.LogWarning("Erro de regra de negócio na criação de usuário: {Error}", errorMessage);
+            return Results.BadRequest(new { Message = errorMessage });
+        }
+        // TRATAMENTO DE ERROS INESPERADOS - Exceptions de Infraestrutura
+        catch (KeycloakException keycloakEx)
+        {
+            logger.LogError(keycloakEx, "Erro do Keycloak ao criar usuário: {Email}, Operação: {Operation}, ErrorCode: {ErrorCode}",
+                request?.Email ?? "N/A", keycloakEx.Operation, keycloakEx.ErrorCode);
+
+            return Results.Problem(
+                detail: $"Falha no sistema de autenticação: {keycloakEx.Message}",
+                statusCode: 500,
+                title: "Erro do Sistema de Autenticação"
+            );
+        }
+        catch (DatabaseException dbEx)
+        {
+            logger.LogError(dbEx, "Erro de banco de dados ao criar usuário: {Email}, Operação: {Operation}, Tabela: {Table}",
+                request?.Email ?? "N/A", dbEx.Operation, dbEx.TableName);
+
+            return Results.Problem(
+                detail: $"Falha no banco de dados: {dbEx.Message}",
+                statusCode: 500,
+                title: "Erro de Banco de Dados"
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint CreateUser para email: {Email}", request?.Email ?? "N/A");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
+
+    private static async Task<IResult> LoginUser(
+    [FromBody] LoginUserRequest request,
+    IMediator mediator,
+    ILogger<LoginUserResponse> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Tenta validar o objeto usando as DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+        
+        if (!isValid)
+        {
+            // Retorna 400 com os erros de validação
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+        
+        return null;
+    }
+}
+
 //     {
 //         var group = app.MapGroup("/auth")
 //             .WithTags("Authentication");

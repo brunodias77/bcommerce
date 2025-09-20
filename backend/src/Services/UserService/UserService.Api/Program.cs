@@ -6,6 +6,7 @@
 // em arquivos de injeção de dependência para melhor separação de responsabilidades.
 // ============================================================================
 
+using System.ComponentModel.DataAnnotations;
 using UserService.Api.Configurations;
 using UserService.Api.Endpoints;
 using UserService.Application.Services;
@@ -49,7 +50,7 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "B-Commerce User Management API v1");
         c.RoutePrefix = string.Empty; // Serve Swagger UI na raiz (/) para facilitar acesso
     });
-    
+
     // Página de exceções detalhadas para debugging
     app.UseDeveloperExceptionPage();
 }
@@ -60,7 +61,7 @@ else
     // ============================================================================
     // Tratamento genérico de exceções em produção (sem detalhes sensíveis)
     app.UseExceptionHandler("/error");
-    
+
     // HTTP Strict Transport Security - força uso de HTTPS
     app.UseHsts();
 }
@@ -73,22 +74,22 @@ app.Use(async (context, next) =>
 {
     // Previne ataques de MIME type sniffing
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    
+
     // Previne que a página seja exibida em frames (proteção contra clickjacking)
     context.Response.Headers["X-Frame-Options"] = "DENY";
-    
+
     // Habilita proteção XSS do navegador
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
-    
+
     // Controla informações de referrer enviadas
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    
+
     // Em produção, força uso de HTTPS por 1 ano
     if (!app.Environment.IsDevelopment())
     {
         context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
     }
-    
+
     await next();
 });
 
@@ -119,23 +120,23 @@ app.UseExceptionHandler(errorApp =>
     {
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        
+
         // Registra a exceção nos logs para monitoramento
         if (exceptionFeature?.Error != null)
         {
             logger.LogError(exceptionFeature.Error, "Unhandled exception occurred");
         }
-        
+
         // Configura resposta de erro padronizada
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        
+
         // Retorna detalhes da exceção apenas em desenvolvimento
         await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
         {
             title = "Internal Server Error",
             status = 500,
-            detail = app.Environment.IsDevelopment() 
+            detail = app.Environment.IsDevelopment()
                 ? exceptionFeature?.Error?.Message  // Detalhes em desenvolvimento
                 : "An error occurred while processing your request"  // Mensagem genérica em produção
         }));
@@ -152,6 +153,7 @@ app.MapHealthChecks("/health");
 // Endpoints de autenticação do Keycloak
 // Inclui registro, login, logout e gerenciamento de usuários
 app.MapAuthEndpointsKeycloak();
+app.MapAuthEndpoints();
 
 // ============================================================================
 // ENDPOINTS DE INFORMAÇÃO DA API
@@ -180,7 +182,7 @@ app.MapGet("/api", (IConfiguration configuration) =>
     // Carrega configurações do Keycloak para informações da API
     var keycloakSettings = configuration.GetSection(KeycloakSettings.SectionName).Get<KeycloakSettings>()
                           ?? throw new InvalidOperationException("Configurações do Keycloak não encontradas");
-    
+
     return new
     {
         name = "B-Commerce User Management API",
