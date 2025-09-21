@@ -6,6 +6,7 @@ using UserService.Application.Commands.Users.CreateUser;
 using UserService.Application.Commands.Users.LoginUser;
 using UserService.Application.Dtos.Requests;
 using UserService.Application.Dtos.Responses;
+using UserService.Application.Services.Interfaces;
 using UserService.Domain.Exceptions;
 
 namespace UserService.Api.Endpoints;
@@ -38,6 +39,16 @@ public static class AuthEndpoints
             .ProducesValidationProblem(400)
             .Produces(401)
             .Produces(500);
+        
+        group.MapPost("/resend", ResendVerificationEmailAsync)
+            .WithName("ResendVerificationEmail")
+            .WithSummary("Resend verification email")
+            .WithDescription("Resend email verification to user's email address")
+            .Produces<EmailVerificationSentResponse>(200)
+            .Produces<ProblemDetails>(400)
+            .Produces<ProblemDetails>(404)
+            .Produces<ProblemDetails>(409)
+            .Produces<ProblemDetails>(500);
 
     }
 
@@ -200,6 +211,82 @@ public static class AuthEndpoints
                 detail: "An unexpected error occurred during login",
                 statusCode: 500
             );
+        }
+    }
+
+
+    internal static async Task<IResult> ResendVerificationEmailAsync(
+        ResendVerificationEmailRequest request,
+        IKeycloakService keycloakService,
+        ILogger<Program> logger)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Solicitação inválida",
+                    Detail = "Endereço de e-mail é obrigatório",
+                    Status = 400
+                });
+            }
+            
+            logger.LogInformation("Reenviando e-mail de verificação para {Email}", request.Email);
+
+            
+            var user = await keycloakService.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                // Não revele se o usuário existe por razões de segurança
+                logger.LogInformation("Solicitação de reenvio de e-mail de verificação para e-mail inexistente {Email}", request.Email);
+                return Results.Ok(new EmailVerificationSentResponse
+                (
+                    Email: request.Email,
+                    Message:"Se existir uma conta com este e-mail, um e-mail de verificação foi enviado",
+                    SentAt: DateTimeOffset.UtcNow
+                ));
+            }
+            
+            if (user.EmailVerified)
+            {
+                logger.LogInformation("Solicitação de reenvio de e-mail de verificação para e-mail já verificado {Email}", request.Email);
+                return Results.Conflict(new ProblemDetails
+                {
+                    Title = "E-mail já verificado",
+                    Detail = "Este endereço de e-mail já foi verificado",
+                    Status = 409
+                });
+            }
+            
+            var result = await keycloakService.SendEmailVerificationAsync(user.Id);
+            if (!result)
+            {
+                logger.LogError("Falha ao enviar e-mail de verificação para {Email}", request.Email);
+                return Results.Problem(
+                    title: "Falha ao enviar e-mail",
+                    detail: "Falha ao enviar e-mail de verificação",
+                    statusCode: 500);
+            }
+            
+            
+            logger.LogInformation("E-mail de verificação enviado com sucesso para {Email}", request.Email);
+
+            return Results.Ok(new EmailVerificationSentResponse
+            (
+                Email: request.Email,
+                Message: "E-mail de verificação enviado com sucesso",
+                SentAt:  DateTimeOffset.UtcNow
+            ));
+            
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error resending verification email");
+            return Results.Problem(
+                title: "Resend Email Error",
+                detail: "An error occurred while resending verification email",
+                statusCode: 500);
         }
     }
 }

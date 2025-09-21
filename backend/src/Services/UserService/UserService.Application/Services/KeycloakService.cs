@@ -205,6 +205,50 @@ public class KeycloakService : IKeycloakService
         }
     }
 
+    public async Task<bool> SendEmailVerificationAsync(string userId)
+    {
+        try
+        {
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);  
+            
+            
+            var user = await GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Não é possível enviar verificação de e-mail: usuário {UserId} não encontrado", userId);
+                return false;
+            }
+            
+            if (user.EmailVerified)
+            {
+                _logger.LogInformation("E-mail já verificado para o usuário {UserId}", userId);
+                return true;
+            }
+            
+            // Enviar verificação de e-mail usando o endpoint execute-actions-email do Keycloak
+            var actions = new[] { "VERIFY_EMAIL" };
+            var json = JsonSerializer.Serialize(actions, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{userId}/execute-actions-email";
+            var response = await _httpClient.PutAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Verificação de e-mail enviada com sucesso para o usuário {UserId}", userId);
+                return true;
+            }
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Falha ao enviar verificação de e-mail para o usuário {UserId}. Status: {StatusCode}, Error: {Error}", 
+                userId, response.StatusCode, errorContent);
+            return false;
+        }catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao enviar e-mail de verificação para o usuário {UserId}", userId);
+            throw;
+        }
+    }
+
     private async Task<string> GetAdminTokenAsync()
     {
         try
