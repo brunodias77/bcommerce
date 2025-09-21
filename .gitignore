@@ -267,4 +267,5 @@ $RECYCLE.BIN/
 *.msp
 
 # Windows shortcuts
-*.lnk
+*.lnk\
+.env.example
