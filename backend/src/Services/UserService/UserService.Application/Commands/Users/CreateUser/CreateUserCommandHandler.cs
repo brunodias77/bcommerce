@@ -73,17 +73,17 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             }
             
                       
-            var createUserRequest = new CreateUserRequest
-            {
-                Username = request.Email,
-                Email = request.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Password = request.Password,
-                Enabled = true,
-                EmailVerified = false,
-                Roles = new List<string> { "user" } // Default role
-            };
+            var createUserRequest = new CreateUserKeycloak
+            (
+                Username: request.Email,
+                Email: request.Email,
+                FirstName: request.FirstName,
+                LastName: request.LastName,
+                Password: request.Password,
+                Enabled: true,
+                EmailVerified: false,
+                Roles: new List<string> { "user" } // Default role
+            );
             
             userKeycloakId = await _keycloakService.CreateUserAsync(createUserRequest);
             if (string.IsNullOrEmpty(userKeycloakId))
