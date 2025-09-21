@@ -29,10 +29,10 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
     {
         try
         {
-            var loginRequestKeycloak = new LoginRequest {
-              Email = request.Email,  
-              Password = request.Password
-            };
+            var loginRequestKeycloak = new LoginUserKeycloak(
+              Email: request.Email,  
+              Password: request.Password
+            );
 
             var response = await _keycloakService.LoginAsync(loginRequestKeycloak);
 

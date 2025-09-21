@@ -152,7 +152,7 @@ app.MapHealthChecks("/health");
 
 // Endpoints de autenticação do Keycloak
 // Inclui registro, login, logout e gerenciamento de usuários
-app.MapAuthEndpointsKeycloak();
+// app.MapAuthEndpointsKeycloak();
 app.MapAuthEndpoints();
 
 // ============================================================================
