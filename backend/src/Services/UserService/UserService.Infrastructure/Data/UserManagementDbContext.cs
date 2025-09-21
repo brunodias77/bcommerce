@@ -29,8 +29,8 @@ namespace UserService.Infrastructure.Data;
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.UserId);
-                entity.HasIndex(e => e.Email).IsUnique().HasFilter("[deleted_at] IS NULL");
-                entity.HasIndex(e => e.Status).HasFilter("[deleted_at] IS NULL");
+                entity.HasIndex(e => e.Email).IsUnique().HasFilter("\"deleted_at\" IS NULL");
+                entity.HasIndex(e => e.Status).HasFilter("\"deleted_at\" IS NULL");
                 entity.HasIndex(e => e.Role);
                 entity.HasIndex(e => e.KeycloakId).IsUnique();
                 
@@ -52,7 +52,7 @@ namespace UserService.Infrastructure.Data;
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => new { e.UserId, e.Type })
                     .IsUnique()
-                    .HasFilter("[is_default] = 1 AND [deleted_at] IS NULL");
+                    .HasFilter("\"is_default\" = true AND \"deleted_at\" IS NULL");
                 
                 entity.Property(e => e.Type)
                     .HasConversion<string>();
@@ -74,7 +74,7 @@ namespace UserService.Infrastructure.Data;
                 entity.HasIndex(e => e.GatewayToken).IsUnique();
                 entity.HasIndex(e => e.UserId)
                     .IsUnique()
-                    .HasFilter("[is_default] = 1 AND [deleted_at] IS NULL");
+                    .HasFilter("\"is_default\" = true AND \"deleted_at\" IS NULL");
                 
                 entity.Property(e => e.Brand)
                     .HasConversion<string>();

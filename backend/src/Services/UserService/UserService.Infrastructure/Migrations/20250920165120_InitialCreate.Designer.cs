@@ -12,7 +12,7 @@ using UserService.Infrastructure.Data;
 namespace UserService.Infrastructure.Migrations
 {
     [DbContext(typeof(UserManagementDbContext))]
-    [Migration("20250917234628_InitialCreate")]
+    [Migration("20250920165120_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -136,7 +136,6 @@ namespace UserService.Infrastructure.Migrations
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
@@ -148,7 +147,7 @@ namespace UserService.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasFilter("[deleted_at] IS NULL");
+                        .HasFilter("\"deleted_at\" IS NULL");
 
                     b.HasIndex("KeycloakId")
                         .IsUnique();
@@ -156,7 +155,7 @@ namespace UserService.Infrastructure.Migrations
                     b.HasIndex("Role");
 
                     b.HasIndex("Status")
-                        .HasFilter("[deleted_at] IS NULL");
+                        .HasFilter("\"deleted_at\" IS NULL");
 
                     b.ToTable("users");
                 });
@@ -234,7 +233,6 @@ namespace UserService.Infrastructure.Migrations
                         .HasColumnName("type");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
@@ -252,7 +250,7 @@ namespace UserService.Infrastructure.Migrations
 
                     b.HasIndex("UserId", "Type")
                         .IsUnique()
-                        .HasFilter("[is_default] = 1 AND [deleted_at] IS NULL");
+                        .HasFilter("\"is_default\" = true AND \"deleted_at\" IS NULL");
 
                     b.ToTable("user_addresses");
                 });
@@ -288,7 +286,6 @@ namespace UserService.Infrastructure.Migrations
                         .HasColumnName("type");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
@@ -357,7 +354,6 @@ namespace UserService.Infrastructure.Migrations
                         .HasColumnName("nickname");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
@@ -376,7 +372,7 @@ namespace UserService.Infrastructure.Migrations
 
                     b.HasIndex("UserId")
                         .IsUnique()
-                        .HasFilter("[is_default] = 1 AND [deleted_at] IS NULL");
+                        .HasFilter("\"is_default\" = true AND \"deleted_at\" IS NULL");
 
                     b.ToTable("user_saved_cards");
                 });
