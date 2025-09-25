@@ -139,7 +139,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             {
                 TokenId = Guid.NewGuid(),
                 UserId = user.UserId,
-                TokenType = "activation",
+                TokenType = UserTokenType.EmailVerification,
                 TokenValue = activationToken,
                 ExpiresAt = DateTime.UtcNow.AddHours(24), // Token expira em 24 horas
                 CreatedAt = DateTime.UtcNow,

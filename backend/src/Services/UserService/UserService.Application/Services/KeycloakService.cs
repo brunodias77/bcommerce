@@ -183,7 +183,7 @@ public class KeycloakService : IKeycloakService
         }
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginUserKeycloak request)
+    public async Task<LoginResponseKeycloak> LoginAsync(LoginUserKeycloak request)
     {
         try
         {
@@ -206,7 +206,7 @@ public class KeycloakService : IKeycloakService
                 throw KeycloakException.ForAuthenticationError($"Erro ao fazer login no Keycloak: {error?.ErrorDescription ?? "Credenciais inválidas"}");
             }
 
-            var loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent, _jsonOptions);
+            var loginResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
             return loginResponse ?? throw new InvalidOperationException("Falha ao desserializar a resposta de login");
         }
         catch (Exception ex)
@@ -260,6 +260,36 @@ public class KeycloakService : IKeycloakService
         }
     }
 
+    public async Task<LoginResponseKeycloak> RefreshTokenAsync(string refreshToken)
+    {
+        try
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("client_id", _settings.FrontendClientId),
+                new KeyValuePair<string, string>("refresh_token", refreshToken)
+            });
+            
+            var url = $"{_settings.Url}/realms/{_settings.Realm}/protocol/openid-connect/token";
+            var response = await _httpClient.PostAsync(url, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = JsonSerializer.Deserialize<KeycloakErrorResponse>(responseContent, _jsonOptions);
+                throw new UnauthorizedAccessException($"Falha na atualização do token: {error?.ErrorDescription}");
+            }
+            var loginResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
+            return loginResponse ?? throw new InvalidOperationException("Falha ao desserializar a resposta de atualização");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar o token");
+            throw;
+        }
+    }
+
     private async Task<string> GetAdminTokenAsync()
     {
         try
@@ -282,7 +312,7 @@ public class KeycloakService : IKeycloakService
                 throw new UnauthorizedAccessException($"Admin token request failed: {error?.ErrorDescription}");
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent, _jsonOptions);
+            var tokenResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
             return tokenResponse?.AccessToken ?? throw new InvalidOperationException("Failed to get admin token");
         }
         catch (Exception ex)

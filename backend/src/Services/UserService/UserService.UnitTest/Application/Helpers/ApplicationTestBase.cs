@@ -49,7 +49,7 @@ public abstract class ApplicationTestBase : IDisposable
 
         MockKeycloakService
             .Setup(x => x.LoginAsync(It.IsAny<LoginUserKeycloak>()))
-            .ReturnsAsync(new LoginResponse(
+            .ReturnsAsync(new LoginResponseKeycloak(
                 AccessToken: "fake_token",
                 ExpiresIn: 3600,
                 RefreshExpiresIn: 86400,
@@ -88,7 +88,7 @@ public abstract class ApplicationTestBase : IDisposable
         var token = expectedToken ?? TestDataBuilder.GenerateJwtToken();
         MockKeycloakService
             .Setup(x => x.LoginAsync(It.IsAny<LoginUserKeycloak>()))
-            .ReturnsAsync(new LoginResponse(
+            .ReturnsAsync(new LoginResponseKeycloak(
                 AccessToken: token,
                 ExpiresIn: 3600,
                 RefreshExpiresIn: 86400,

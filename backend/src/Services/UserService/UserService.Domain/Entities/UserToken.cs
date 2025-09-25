@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using UserService.Domain.Enums;
 
 namespace UserService.Domain.Entities;
 
@@ -15,9 +16,8 @@ public class UserToken
     public Guid UserId { get; set; }
 
     [Required]
-    [MaxLength(50)]
     [Column("token_type")]
-    public string TokenType { get; set; }
+    public UserTokenType TokenType { get; set; }
 
     [Required]
     [MaxLength(256)]

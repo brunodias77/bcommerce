@@ -9,9 +9,9 @@ public interface IKeycloakService
     Task<UserResponseKeycloak?> GetUserByEmailAsync(string email);
     Task<UserResponseKeycloak?> GetUserByIdAsync(string userId);
     Task<bool> DeleteUserAsync(string userId);
-    Task<LoginResponse> LoginAsync(LoginUserKeycloak request);
-    
+    Task<LoginResponseKeycloak> LoginAsync(LoginUserKeycloak request);
     Task<bool> SendEmailVerificationAsync(string userId);
+    Task<LoginResponseKeycloak> RefreshTokenAsync(string refreshToken);
 
     
     // Task<LoginResponse> LoginAsync(LoginRequest request);

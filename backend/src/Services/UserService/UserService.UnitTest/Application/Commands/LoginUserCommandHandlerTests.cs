@@ -60,7 +60,7 @@ public class LoginUserCommandHandlerTests : IDisposable
             Password = "MinhaSenh@123"
         };
 
-        var expectedResponse = new LoginResponse(
+        var expectedResponse = new LoginResponseKeycloak(
             AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
             ExpiresIn: 3600,
             RefreshExpiresIn: 7200,
@@ -158,7 +158,7 @@ public class LoginUserCommandHandlerTests : IDisposable
             Password = password
         };
 
-        var expectedResponse = new LoginResponse(
+        var expectedResponse = new LoginResponseKeycloak(
             AccessToken: $"token_for_{email}",
             ExpiresIn: 3600,
             RefreshExpiresIn: 7200,
@@ -221,7 +221,7 @@ public class LoginUserCommandHandlerTests : IDisposable
             Password = "MinhaSenh@123"
         };
 
-        var expectedResponse = new LoginResponse(
+        var expectedResponse = new LoginResponseKeycloak(
             AccessToken: "novo_access_token",
             ExpiresIn: 3600,
             RefreshExpiresIn: 7200,
@@ -262,7 +262,7 @@ public class LoginUserCommandHandlerTests : IDisposable
         };
 
         var cancellationToken = new CancellationToken();
-        var expectedResponse = new LoginResponse(
+        var expectedResponse = new LoginResponseKeycloak(
             AccessToken: "access_token",
             ExpiresIn: 3600,
             RefreshExpiresIn: 7200,
