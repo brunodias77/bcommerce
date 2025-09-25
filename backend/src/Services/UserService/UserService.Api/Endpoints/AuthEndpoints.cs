@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using BuildingBlocks.Abstractions;
 using UserService.Application.Commands.Users.CreateUser;
 using UserService.Application.Commands.Users.LoginUser;
+using UserService.Application.Commands.Users.ActivateAccount;
 using UserService.Application.Dtos.Requests;
 using UserService.Application.Dtos.Responses;
+using UserService.Application.Services.Interfaces;
 using UserService.Domain.Exceptions;
+using UserService.Api.DTOs.Requests;
 
 namespace UserService.Api.Endpoints;
 //
@@ -37,6 +40,17 @@ public static class AuthEndpoints
             .Produces<LoginUserResponse>(200)
             .ProducesValidationProblem(400)
             .Produces(401)
+            .Produces(500);
+
+        // Endpoint de ativação de conta
+        group.MapPost("/activate", ActivateAccount)
+            .WithName("ActivateAccount")
+            .WithSummary("Ativa uma conta de usuário")
+            .WithDescription("Ativa a conta do usuário usando o token de ativação enviado por email")
+            .Produces(200)
+            .ProducesValidationProblem(400)
+            .Produces(404)
+            .Produces(409)
             .Produces(500);
 
     }
@@ -202,6 +216,95 @@ public static class AuthEndpoints
             );
         }
     }
+
+    /// <summary>
+    /// Ativa uma conta de usuário usando token de ativação
+    /// </summary>
+    /// <param name="request">Request com o token de ativação</param>
+    /// <param name="mediator">Mediator para envio de commands</param>
+    /// <param name="logger">Logger para registrar eventos</param>
+    /// <returns>Resultado da ativação da conta</returns>
+    private static async Task<IResult> ActivateAccount(
+        [FromBody] ActivateAccountRequest request,
+        IMediator mediator,
+        ILogger<ActivateAccountRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Validação usando DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando ativação de conta via endpoint com token: {Token}", request.Token);
+
+            // Validação básica de entrada
+            if (request == null)
+            {
+                logger.LogWarning("Request nulo recebido no endpoint ActivateAccount");
+                return Results.BadRequest("Dados da requisição são obrigatórios");
+            }
+
+            // Criar o command
+            var command = new ActivateAccountCommand(request.Token);
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Tratar o resultado
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Conta ativada com sucesso via endpoint");
+                return Results.Ok(new { Message = "Conta ativada com sucesso! Você já pode fazer login." });
+            }
+
+            // Tratar diferentes tipos de erro baseado na mensagem
+            var errorMessage = result.FirstError;
+
+            if (errorMessage.Contains("inválido") || errorMessage.Contains("já utilizado"))
+            {
+                logger.LogWarning("Token de ativação inválido ou já utilizado: {Token}", request.Token);
+                return Results.NotFound(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("expirado"))
+            {
+                logger.LogWarning("Token de ativação expirado: {Token}", request.Token);
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("já foi ativada"))
+            {
+                logger.LogWarning("Tentativa de ativar conta já ativa: {Token}", request.Token);
+                return Results.Conflict(new { Message = errorMessage });
+            }
+
+            // Outros erros são tratados como Bad Request
+            logger.LogWarning("Erro na ativação de conta: {Error}", errorMessage);
+            return Results.BadRequest(new { Message = errorMessage });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ActivateAccount para token: {Token}", request?.Token ?? "N/A");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
+
+
+  
 }
 
 //     {

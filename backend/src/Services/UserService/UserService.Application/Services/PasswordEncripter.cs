@@ -6,20 +6,26 @@ public class PasswordEncripter : IPasswordEncripter
 {
     public string Encrypt(string password)
     {
-        if (string.IsNullOrWhiteSpace(password))
-            throw new ArgumentException("Password cannot be null or empty", nameof(password));
+        if (password == null)
+            throw new ArgumentNullException(nameof(password));
         
         return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
-    public bool Verify(string password, string passwordHash)
+    public bool Verify(string password, string hashedPassword)
     {
-        if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(passwordHash))
+        if (password == null)
+            throw new ArgumentNullException(nameof(password));
+        
+        if (hashedPassword == null)
+            throw new ArgumentNullException(nameof(hashedPassword));
+        
+        if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(hashedPassword))
             return false;
         
         try
         {
-            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+            return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
         catch (Exception)
         {

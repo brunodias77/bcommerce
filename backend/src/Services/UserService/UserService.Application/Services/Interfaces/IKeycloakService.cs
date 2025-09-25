@@ -11,6 +11,9 @@ public interface IKeycloakService
     Task<bool> DeleteUserAsync(string userId);
     Task<LoginResponse> LoginAsync(LoginUserKeycloak request);
     
+    Task<bool> SendEmailVerificationAsync(string userId);
+
+    
     // Task<LoginResponse> LoginAsync(LoginRequest request);
     // Task<LoginResponse> RefreshTokenAsync(string refreshToken);
     // Task LogoutAsync(string refreshToken);
