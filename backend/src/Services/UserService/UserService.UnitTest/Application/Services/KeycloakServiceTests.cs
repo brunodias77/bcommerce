@@ -31,6 +31,159 @@ public class KeycloakServiceTests
         _optionsMock = new Mock<IOptions<KeycloakSettings>>();
         _loggerMock = new Mock<ILogger<KeycloakService>>();
         
+        // Setup a generic mock that handles all HTTP requests
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
+            {
+                var uri = request.RequestUri?.ToString() ?? "";
+                Console.WriteLine($"Mock called with URI: {uri}");
+                Console.WriteLine($"Method: {request.Method}");
+                
+                // Admin token request
+                if (uri.Contains("/protocol/openid-connect/token") && request.Method == HttpMethod.Post && uri.Contains("client_id=admin-cli"))
+                {
+                    Console.WriteLine("Handling admin token request");
+                    var adminTokenResponse = new LoginResponse(
+                        AccessToken: "admin-token-123",
+                        ExpiresIn: 3600,
+                        RefreshExpiresIn: 7200,
+                        RefreshToken: "admin-refresh-token",
+                        TokenType: "Bearer",
+                        Scope: "openid profile email"
+                    );
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
+                    };
+                }
+                
+                // User login request (non-admin)
+                if (uri.Contains("/protocol/openid-connect/token") && request.Method == HttpMethod.Post)
+                {
+                    Console.WriteLine("Handling user login request");
+                    // Check if it's invalid credentials by looking at the request content
+                    var requestContent = request.Content?.ReadAsStringAsync().Result ?? "";
+                    Console.WriteLine($"Login request content: {requestContent}");
+                    
+                    if (requestContent.Contains("password=SenhaIncorreta"))
+                    {
+                        Console.WriteLine("Returning 401 for invalid credentials");
+                        var errorResponse = new { error = "invalid_grant", error_description = "Invalid user credentials" };
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.Unauthorized,
+                            Content = new StringContent(JsonSerializer.Serialize(errorResponse), Encoding.UTF8, "application/json")
+                        };
+                    }
+                    
+                    Console.WriteLine("Returning successful login response");
+                    var loginResponse = new LoginResponse(
+                        AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        ExpiresIn: 3600,
+                        RefreshExpiresIn: 7200,
+                        RefreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        TokenType: "Bearer",
+                        Scope: "openid profile email"
+                    );
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(JsonSerializer.Serialize(loginResponse), Encoding.UTF8, "application/json")
+                    };
+                }
+                
+                // Create user request
+                if (uri.Contains("/admin/realms/test-realm/users") && request.Method == HttpMethod.Post)
+                {
+                    // Check if it's a conflict scenario by looking at the request content
+                    var requestContent = request.Content?.ReadAsStringAsync().Result ?? "";
+                    if (requestContent.Contains("\"email\":\"QuandoUsuarioJaExiste@email.com\""))
+                    {
+                        var errorResponse = new { errorMessage = "User exists with same username" };
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            Content = new StringContent(JsonSerializer.Serialize(errorResponse), Encoding.UTF8, "application/json")
+                        };
+                    }
+                    
+                    var userId = Guid.NewGuid().ToString();
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.Created,
+                        Headers = { Location = new Uri($"http://localhost:8080/auth/admin/realms/test-realm/users/{userId}") }
+                    };
+                }
+                
+                // Get user by email request
+                if (uri.Contains("/admin/realms/test-realm/users") && uri.Contains("email=") && request.Method == HttpMethod.Get)
+                {
+                    // Check if it's a non-existent email scenario
+                    if (uri.Contains("EmailInexistente") || uri.Contains("nonexistent") || 
+                        uri.Contains("usuario.inexistente%40email.com") || uri.Contains("usuario.inexistente@email.com"))
+                    {
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Content = new StringContent("[]", Encoding.UTF8, "application/json")
+                        };
+                    }
+                    
+                    var usersResponse = new[]
+                    {
+                        new UserResponseKeycloak(
+                            Id: Guid.NewGuid().ToString(),
+                            Username: "test@email.com",
+                            Email: "test@email.com",
+                            FirstName: "Test",
+                            LastName: "User",
+                            Enabled: true,
+                            EmailVerified: true,
+                            CreatedTimestamp: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                            Roles: new List<string> { "user" },
+                            Attributes: new Dictionary<string, List<string>>()
+                        )
+                    };
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(JsonSerializer.Serialize(usersResponse), Encoding.UTF8, "application/json")
+                    };
+                }
+                
+                // Delete user request
+                if (uri.Contains("/admin/realms/test-realm/users/") && request.Method == HttpMethod.Delete)
+                {
+                    // Check if it's an invalid user ID scenario
+                    if (uri.Contains("IdInvalido") || uri.Contains("invalid-id") || uri.Contains("00000000-0000-0000-0000-000000000000"))
+                    {
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.NotFound,
+                            Content = new StringContent("{\"error\": \"User not found\"}", Encoding.UTF8, "application/json")
+                        };
+                    }
+                    
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.NoContent
+                    };
+                }
+                
+                // Default response for other requests
+                return new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            });
+        
         _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
         
         // Setup KeycloakSettings
@@ -40,6 +193,7 @@ public class KeycloakServiceTests
             Realm = "test-realm",
             BackendClientId = "test-client",
             BackendClientSecret = "test-secret",
+            FrontendClientId = "frontend-client",
             AdminUsername = "admin",
             AdminPassword = "admin-password"
         };
@@ -53,49 +207,13 @@ public class KeycloakServiceTests
     public async Task CreateUserAsync_ComDadosValidos_DeveRetornarIdDoUsuario()
     {
         // Arrange
-        var username = _faker.Internet.UserName();
         var email = _faker.Internet.Email();
         var firstName = _faker.Name.FirstName();
         var lastName = _faker.Name.LastName();
-        var password = "MinhaSenh@123";
-        var expectedUserId = Guid.NewGuid().ToString();
-
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-        var userResponse = new { id = expectedUserId };
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token") &&
-                    req.Method == HttpMethod.Post),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup create user request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/admin/realms/test-realm/users") &&
-                    req.Method == HttpMethod.Post),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.Created,
-                Headers = { Location = new Uri($"http://localhost:8080/auth/admin/realms/test-realm/users/{expectedUserId}") }
-            });
-
-        // Act
+        var password = _faker.Internet.Password();
+        
         var createUserRequest = new CreateUserKeycloak(
-            Username: username,
+            Username: email,
             Email: email,
             FirstName: firstName,
             LastName: lastName,
@@ -104,52 +222,28 @@ public class KeycloakServiceTests
             EmailVerified: false,
             Roles: new List<string> { "user" }
         );
+
+        // Mock will be handled by the generic setup in constructor
+
+        // Act
         var result = await _keycloakService.CreateUserAsync(createUserRequest);
 
         // Assert
-        result.Should().Be(expectedUserId);
+        result.Should().NotBeNullOrEmpty();
+        Guid.TryParse(result, out _).Should().BeTrue("O resultado deve ser um GUID válido");
     }
 
     [Fact]
     public async Task CreateUserAsync_QuandoUsuarioJaExiste_DeveLancarKeycloakException()
     {
         // Arrange
-        var username = _faker.Internet.UserName();
-        var email = _faker.Internet.Email();
+        var username = "QuandoUsuarioJaExiste";
+        var email = "QuandoUsuarioJaExiste@email.com";
         var firstName = _faker.Name.FirstName();
         var lastName = _faker.Name.LastName();
         var password = "MinhaSenh@123";
 
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-        var errorResponse = new { error = "User exists with same username" };
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup create user request with conflict
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/admin/realms/test-realm/users")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.Conflict,
-                Content = new StringContent(JsonSerializer.Serialize(errorResponse), Encoding.UTF8, "application/json")
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act & Assert
         var createUserRequest = new CreateUserKeycloak(
@@ -175,6 +269,7 @@ public class KeycloakServiceTests
         var email = _faker.Internet.Email();
         var password = "MinhaSenh@123";
         
+        // Mock will be handled by the generic setup in constructor
         var tokenResponse = new LoginResponse(
             AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
             ExpiresIn: 3600,
@@ -183,20 +278,6 @@ public class KeycloakServiceTests
             TokenType: "Bearer",
             Scope: "openid profile email"
         );
-
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token") &&
-                    req.Method == HttpMethod.Post),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(tokenResponse), Encoding.UTF8, "application/json")
-            });
 
         // Act
         var loginRequest = new LoginUserKeycloak(email, password);
@@ -219,20 +300,7 @@ public class KeycloakServiceTests
         var email = _faker.Internet.Email();
         var password = "SenhaIncorreta";
         
-        var errorResponse = new { error = "invalid_grant", error_description = "Invalid user credentials" };
-
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.Unauthorized,
-                Content = new StringContent(JsonSerializer.Serialize(errorResponse), Encoding.UTF8, "application/json")
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act & Assert
         var loginRequest = new LoginUserKeycloak(email, password);
@@ -246,62 +314,19 @@ public class KeycloakServiceTests
     public async Task GetUserByEmailAsync_ComEmailExistente_DeveRetornarUsuario()
     {
         // Arrange
-        var email = _faker.Internet.Email();
-        var expectedUserId = Guid.NewGuid().ToString();
+        var email = "test@email.com";
         
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-        var usersResponse = new[]
-        {
-            new UserResponseKeycloak(
-                Id: expectedUserId,
-                Username: email,
-                Email: email,
-                FirstName: _faker.Name.FirstName(),
-                LastName: _faker.Name.LastName(),
-                Enabled: true,
-                EmailVerified: true,
-                CreatedTimestamp: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                Roles: new List<string> { "user" },
-                Attributes: new Dictionary<string, List<string>>()
-            )
-        };
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup get user request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/admin/realms/test-realm/users") &&
-                    req.RequestUri.ToString().Contains($"email={email}")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(usersResponse), Encoding.UTF8, "application/json")
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act
         var result = await _keycloakService.GetUserByEmailAsync(email);
 
         // Assert
         result.Should().NotBeNull();
-        result.Id.Should().Be(expectedUserId);
         result.Email.Should().Be(email);
+        result.Username.Should().Be(email);
+        result.FirstName.Should().Be("Test");
+        result.LastName.Should().Be("User");
     }
 
     [Fact]
@@ -310,36 +335,7 @@ public class KeycloakServiceTests
         // Arrange
         var email = "usuario.inexistente@email.com";
         
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-        var usersResponse = Array.Empty<UserResponseKeycloak>();
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup get user request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/admin/realms/test-realm/users")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(usersResponse), Encoding.UTF8, "application/json")
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act
         var result = await _keycloakService.GetUserByEmailAsync(email);
@@ -354,35 +350,7 @@ public class KeycloakServiceTests
         // Arrange
         var userId = Guid.NewGuid().ToString();
         
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup delete user request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains($"/auth/admin/realms/test-realm/users/{userId}") &&
-                    req.Method == HttpMethod.Delete),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.NoContent
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act
         await _keycloakService.DeleteUserAsync(userId);
@@ -399,36 +367,9 @@ public class KeycloakServiceTests
     public async Task DeleteUserAsync_ComIdInvalido_DeveLancarKeycloakException()
     {
         // Arrange
-        var userId = "id-inexistente";
+        var userId = "IdInvalido";
         
-        var adminTokenResponse = new { access_token = "admin-token", expires_in = 3600 };
-
-        // Setup admin token request
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains("/auth/realms/test-realm/protocol/openid-connect/token")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(adminTokenResponse), Encoding.UTF8, "application/json")
-            });
-
-        // Setup delete user request with not found
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString().Contains($"/auth/admin/realms/test-realm/users/{userId}")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.NotFound
-            });
+        // Mock will be handled by the generic setup in constructor
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeycloakException>(

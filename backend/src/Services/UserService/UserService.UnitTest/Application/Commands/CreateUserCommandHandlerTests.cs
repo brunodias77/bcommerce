@@ -1,6 +1,7 @@
 using Bogus;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using UserService.Application.Commands.Users.CreateUser;
 using UserService.Application.Dtos.Keycloak;
@@ -14,14 +15,16 @@ using UserService.Domain.Exceptions;
 using UserService.Infrastructure.Data;
 using Xunit;
 using BuildingBlocks.Abstractions;
+using BuildingBlocks.Mediator;
 
 namespace UserService.UnitTest.Application.Commands;
 
-public class CreateUserCommandHandlerTests
+public class CreateUserCommandHandlerTests : IDisposable
 {
-    private readonly Mock<UserManagementDbContext> _contextMock;
     private readonly Mock<IKeycloakService> _keycloakServiceMock;
     private readonly Mock<IPasswordEncripter> _passwordEncripterMock;
+    private readonly UserManagementDbContext _context;
+    private readonly Mock<IEmailService> _emailServiceMock;
     private readonly Mock<ILogger<CreateUserCommandHandler>> _loggerMock;
     private readonly CreateUserCommandHandler _handler;
     private readonly Faker _faker;
@@ -30,10 +33,22 @@ public class CreateUserCommandHandlerTests
     {
         _keycloakServiceMock = new Mock<IKeycloakService>();
         _passwordEncripterMock = new Mock<IPasswordEncripter>();
-        _contextMock = new Mock<UserManagementDbContext>();
+        _emailServiceMock = new Mock<IEmailService>();
         _loggerMock = new Mock<ILogger<CreateUserCommandHandler>>();
-        _handler = new CreateUserCommandHandler(_contextMock.Object, _passwordEncripterMock.Object, _keycloakServiceMock.Object, _loggerMock.Object);
+        
+        // Configure InMemory Database
+        var options = new DbContextOptionsBuilder<UserManagementDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new UserManagementDbContext(options);
+        
+        _handler = new CreateUserCommandHandler(_context, _passwordEncripterMock.Object, _keycloakServiceMock.Object, _emailServiceMock.Object, _loggerMock.Object);
         _faker = new Faker();
+    }
+
+    public void Dispose()
+    {
+        _context?.Dispose();
     }
 
     [Fact]
@@ -66,13 +81,21 @@ public class CreateUserCommandHandlerTests
         _passwordEncripterMock
             .Setup(x => x.Encrypt(command.Password))
             .Returns("encrypted_password");
+            
+        _emailServiceMock
+            .Setup(x => x.SendAccountActivationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.IsSuccess.Should().BeTrue();
+        
+        // Debug: Capture error details
+        var errorMessage = result.IsSuccess ? "Success" : result.FirstError.ToString();
+        
+        result.IsSuccess.Should().BeTrue($"Expected success but got error: {errorMessage}");
         result.Value.Should().NotBeEmpty();
 
         _keycloakServiceMock.Verify(x => x.CreateUserAsync(
@@ -101,16 +124,21 @@ public class CreateUserCommandHandlerTests
             .Setup(x => x.CreateUserAsync(It.IsAny<CreateUserKeycloak>()))
             .ThrowsAsync(keycloakException);
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeycloakException>(
-            () => _handler.Handle(command, CancellationToken.None));
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        exception.Message.Should().Be("Erro ao criar usuário no Keycloak");
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.FirstError.Should().Be("Falha na criação do usuário no sistema de autenticação. Tente novamente.");
         
-        // Password encryption is handled by Keycloak
+        // Verify that user creation in Keycloak was attempted
         _keycloakServiceMock.Verify(x => x.CreateUserAsync(
             It.Is<CreateUserKeycloak>(u => u.Email == command.Email)), Times.Once);
-        // Verify that user creation in Keycloak was attempted
+        
+        // Verify no user was created in database
+        var usersInDb = await _context.Users.CountAsync();
+        usersInDb.Should().Be(0);
     }
 
     [Fact]
@@ -126,25 +154,39 @@ public class CreateUserCommandHandlerTests
         );
 
         var keycloakUserId = Guid.NewGuid().ToString();
-        var databaseException = new DatabaseException("Erro ao inserir usuário no banco");
 
         _keycloakServiceMock
             .Setup(x => x.CreateUserAsync(It.IsAny<CreateUserKeycloak>()))
             .ReturnsAsync(keycloakUserId);
+            
+        _keycloakServiceMock
+            .Setup(x => x.GetUserByEmailAsync(command.Email))
+            .ReturnsAsync((UserResponseKeycloak)null);
+            
+        _keycloakServiceMock
+            .Setup(x => x.GetUserByIdAsync(keycloakUserId))
+            .ReturnsAsync(new UserResponseKeycloak(keycloakUserId, command.Email, command.Email, command.FirstName, command.LastName, true, true, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), new List<string> { "user" }, new Dictionary<string, List<string>>()));
+            
+        _passwordEncripterMock
+            .Setup(x => x.Encrypt(command.Password))
+            .Returns("encrypted_password");
 
-        // Simulate database failure by setting up context to throw exception
+        // Simulate database failure by disposing the context to cause SaveChanges to fail
+        _context.Dispose();
 
         _keycloakServiceMock
             .Setup(x => x.DeleteUserAsync(keycloakUserId))
             .ReturnsAsync(true);
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<DatabaseException>(
-            () => _handler.Handle(command, CancellationToken.None));
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        exception.Message.Should().Be("Erro ao inserir usuário no banco");
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.FirstError.Should().Be("Erro interno do servidor ao criar usuário. Tente novamente.");
         
-        // Password encryption is handled by Keycloak
+        // Verify that user creation in Keycloak was attempted
         _keycloakServiceMock.Verify(x => x.CreateUserAsync(
             It.Is<CreateUserKeycloak>(u => u.Email == command.Email)), Times.Once);
         // Verify rollback was attempted
@@ -181,6 +223,10 @@ public class CreateUserCommandHandlerTests
         _passwordEncripterMock
             .Setup(x => x.Encrypt(command.Password))
             .Returns("encrypted_password");
+            
+        _emailServiceMock
+            .Setup(x => x.SendAccountActivationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -223,8 +269,12 @@ public class CreateUserCommandHandlerTests
             .ReturnsAsync(new UserResponseKeycloak(keycloakUserId, command.Email, command.Email, command.FirstName, command.LastName, true, true, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), new List<string> { "user" }, new Dictionary<string, List<string>>()));
             
         _passwordEncripterMock
-            .Setup(x => x.Encrypt("MinhaSenh@123"))
+            .Setup(x => x.Encrypt(command.Password))
             .Returns("encrypted_password");
+            
+        _emailServiceMock
+            .Setup(x => x.SendAccountActivationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

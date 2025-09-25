@@ -1,6 +1,7 @@
 using Bogus;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using UserService.Application.Commands.Users.LoginUser;
 using UserService.Application.Dtos.Keycloak;
@@ -14,10 +15,12 @@ using Xunit;
 
 namespace UserService.UnitTest.Application.Commands;
 
-public class LoginUserCommandHandlerTests
+public class LoginUserCommandHandlerTests : IDisposable
 {
     private readonly Mock<IKeycloakService> _keycloakServiceMock;
     private readonly Mock<ILogger<LoginUserCommandHandler>> _loggerMock;
+    private readonly UserManagementDbContext _context;
+    private readonly Mock<IPasswordEncripter> _passwordEncripterMock;
     private readonly LoginUserCommandHandler _handler;
     private readonly Faker _faker;
 
@@ -25,17 +28,26 @@ public class LoginUserCommandHandlerTests
     {
         _keycloakServiceMock = new Mock<IKeycloakService>();
         _loggerMock = new Mock<ILogger<LoginUserCommandHandler>>();
+        _passwordEncripterMock = new Mock<IPasswordEncripter>();
         
-        var contextMock = new Mock<UserManagementDbContext>().Object;
-        var passwordEncripterMock = new Mock<IPasswordEncripter>();
+        // Configure InMemory Database
+        var options = new DbContextOptionsBuilder<UserManagementDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new UserManagementDbContext(options);
         
         _handler = new LoginUserCommandHandler(
-            contextMock,
-            passwordEncripterMock.Object,
+            _context,
+            _passwordEncripterMock.Object,
             _keycloakServiceMock.Object,
             _loggerMock.Object);
         
         _faker = new Faker("pt_BR");
+    }
+
+    public void Dispose()
+    {
+        _context?.Dispose();
     }
 
     [Fact]

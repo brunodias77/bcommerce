@@ -200,7 +200,7 @@ public class LoginUserKeycloakTests
 
         // Assert
         loginKeycloak.Email.Should().Be(longEmail);
-        loginKeycloak.Email.Length.Should().Be(111); // 100 + "@example.com".Length
+        loginKeycloak.Email.Length.Should().Be(112); // 100 + "@example.com".Length
         loginKeycloak.Password.Should().Be("password123");
     }
 
