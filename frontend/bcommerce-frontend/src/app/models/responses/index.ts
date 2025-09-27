@@ -53,3 +53,12 @@ export interface LoginUserResponse {
   /** Escopo do token */
   scope?: string;
 }
+
+/**
+ * Interface para resposta de ativação de conta
+ * Baseada na resposta do endpoint /activate do backend
+ */
+export interface ActivateAccountResponse {
+  /** Mensagem de sucesso ou erro */
+  message: string;
+}

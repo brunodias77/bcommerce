@@ -27,6 +27,16 @@ export const routes: Routes = [
       import('./features/auth/pages/register-page/register-page').then((m) => m.RegisterPage),
     canActivate: [GuestGuard],
   },
+  {
+    path: 'confirm-email',
+    loadComponent: () =>
+      import('./features/auth/pages/confirm-email/confirm-email').then((m) => m.ConfirmEmail),
+  },
+  {
+    path: 'activate',
+    loadComponent: () =>
+      import('./features/auth/pages/activate-page/activate-page').then((m) => m.ActivatePageComponent),
+  },
   // Rotas protegidas (apenas para usuários autenticados)
   {
     path: 'profile',

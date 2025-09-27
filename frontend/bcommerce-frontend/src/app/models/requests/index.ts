@@ -25,3 +25,12 @@ export interface LoginUserRequest {
   /** Senha do usuário */
   password: string;
 }
+
+/**
+ * Interface para requisição de ativação de conta
+ * O token é enviado como query parameter na URL
+ */
+export interface ActivateAccountRequest {
+  /** Token de ativação recebido por email (máximo 500 caracteres) */
+  token: string;
+}

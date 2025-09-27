@@ -1,9 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError, finalize, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateUserResponse, LoginUserResponse } from '../../models/responses';
-import { CreateUserRequest, LoginUserRequest } from '../../models/requests';
+import { CreateUserResponse, LoginUserResponse, ActivateAccountResponse } from '../../models/responses';
+import { CreateUserRequest, LoginUserRequest, ActivateAccountRequest } from '../../models/requests';
 
 
 
@@ -18,6 +18,11 @@ export type RegisterState = 'idle' | 'loading' | 'success' | 'error';
  * Estados possíveis do login
  */
 export type LoginState = 'idle' | 'loading' | 'success' | 'error';
+
+/**
+ * Estados possíveis da ativação de conta
+ */
+export type ActivateState = 'idle' | 'loading' | 'success' | 'error';
 
 /**
  * Estados possíveis da autenticação
@@ -41,6 +46,11 @@ export class AuthService {
   private readonly _loginError = signal<string | null>(null);
   private readonly _loginValidationErrors = signal<string[]>([]);
   
+  // Signals para gerenciamento de estado da ativação
+  private readonly _activateState = signal<ActivateState>('idle');
+  private readonly _activateError = signal<string | null>(null);
+  private readonly _activateMessage = signal<string | null>(null);
+  
   // Signals para gerenciamento de autenticação
   private readonly _authState = signal<AuthState>('unauthenticated');
   private readonly _accessToken = signal<string | null>(null);
@@ -62,6 +72,13 @@ export class AuthService {
   readonly loginError = computed(() => this._loginError());
   readonly loginValidationErrors = computed(() => this._loginValidationErrors());
   readonly hasLoginErrors = computed(() => this._loginState() === 'error');
+  
+  // Computed signals para estado derivado da ativação
+  readonly isActivating = computed(() => this._activateState() === 'loading');
+  readonly activateSuccess = computed(() => this._activateState() === 'success');
+  readonly activateError = computed(() => this._activateError());
+  readonly activateMessage = computed(() => this._activateMessage());
+  readonly hasActivateErrors = computed(() => this._activateState() === 'error');
   
   // Computed signals para estado derivado da autenticação
   readonly isAuthenticated = computed(() => this._authState() === 'authenticated');
@@ -364,6 +381,54 @@ export class AuthService {
     this._authState.set('unauthenticated');
   }
   
+  /**
+   * Ativa a conta do usuário usando o token fornecido
+   * @param request - Dados da requisição de ativação
+   * @returns Observable com a resposta da ativação
+   */
+  activate(request: ActivateAccountRequest): Observable<ActivateAccountResponse> {
+    // Reset do estado
+    this._activateState.set('loading');
+    this._activateError.set(null);
+    this._activateMessage.set(null);
+
+    const url = `${this.baseUrl}/api/auth/activate`;
+    const params = new HttpParams().set('token', request.token);
+
+    return this.http.get<ActivateAccountResponse>(url, { params }).pipe(
+      tap((response) => {
+        this._activateState.set('success');
+        this._activateMessage.set(response.message || 'Conta ativada com sucesso!');
+      }),
+      catchError((error) => {
+        this._activateState.set('error');
+        
+        // Tratamento específico dos códigos de status
+        switch (error.status) {
+          case 400:
+            this._activateError.set('Token inválido ou expirado.');
+            break;
+          case 404:
+            this._activateError.set('Token não encontrado ou já foi utilizado.');
+            break;
+          case 409:
+            this._activateError.set('Esta conta já foi ativada anteriormente.');
+            break;
+          case 500:
+            this._activateError.set('Erro interno do servidor. Tente novamente mais tarde.');
+            break;
+          default:
+            this._activateError.set('Erro desconhecido durante a ativação da conta.');
+        }
+        
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        // Não resetamos o estado aqui para manter a informação de sucesso/erro
+      })
+    );
+  }
+
   /**
    * Realiza logout do usuário, limpando tokens e estado
    */
