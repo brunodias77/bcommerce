@@ -9,18 +9,22 @@ export const routes: Routes = [
   // Rota da página inicial
   {
     path: 'home',
-    loadComponent: () => import('./pages/home-page/home-page').then((m) => m.HomePage),
+    // ./features/home/pages/home-page/home-page
+    loadComponent: () =>
+      import('./features/home/pages/home-page/home-page').then((m) => m.HomePage),
   },
 
   // Rotas públicas (apenas para usuários não autenticados)
   {
     path: 'login',
-    loadComponent: () => import('./pages/login-page/login-page').then(m => m.LoginPage),
-    canActivate: [GuestGuard]
+    loadComponent: () =>
+      import('./features/auth/pages/login-page/login-page').then((m) => m.LoginPage),
+    canActivate: [GuestGuard],
   },
   {
     path: 'register',
-    loadComponent: () => import('./pages/register-page/register-page').then((m) => m.RegisterPage),
+    loadComponent: () =>
+      import('./features/auth/pages/register-page/register-page').then((m) => m.RegisterPage),
     canActivate: [GuestGuard],
   },
   // Rotas protegidas (apenas para usuários autenticados)
