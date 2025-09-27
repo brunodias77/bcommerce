@@ -34,3 +34,12 @@ export interface ActivateAccountRequest {
   /** Token de ativação recebido por email (máximo 500 caracteres) */
   token: string;
 }
+
+/**
+ * Interface para requisição de confirmação de email
+ * O código é enviado como query parameter na URL
+ */
+export interface ConfirmEmailRequest {
+  /** Código de confirmação recebido por email (máximo 500 caracteres) */
+  code: string;
+}

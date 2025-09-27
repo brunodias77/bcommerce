@@ -62,3 +62,12 @@ export interface ActivateAccountResponse {
   /** Mensagem de sucesso ou erro */
   message: string;
 }
+
+/**
+ * Interface para resposta de confirmação de email
+ * Baseada na resposta do endpoint /activate do backend
+ */
+export interface ConfirmEmailResponse {
+  /** Mensagem de sucesso ou erro */
+  message: string;
+}

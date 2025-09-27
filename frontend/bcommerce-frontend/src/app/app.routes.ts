@@ -30,7 +30,7 @@ export const routes: Routes = [
   {
     path: 'confirm-email',
     loadComponent: () =>
-      import('./features/auth/pages/confirm-email/confirm-email').then((m) => m.ConfirmEmail),
+      import('./features/auth/pages/confirm-email/confirm-email').then((m) => m.ConfirmEmailComponent),
   },
   {
     path: 'activate',

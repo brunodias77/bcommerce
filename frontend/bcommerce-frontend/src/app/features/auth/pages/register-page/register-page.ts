@@ -29,33 +29,65 @@ export class RegisterPage implements OnInit, OnDestroy {
   readonly hasErrors = computed(() => this.authService.hasRegisterErrors());
   readonly registerSuccess = computed(() => this.authService.registerSuccess());
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.registerForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(155)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(255), this.passwordValidator]],
-      confirmPassword: ['', [Validators.required]],
-      newsletterOptIn: [false, [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
+    this.registerForm = this.fb.group(
+      {
+        firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+        lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(155)]],
+        email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
+        password: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.maxLength(255),
+            this.passwordValidator,
+          ],
+        ],
+        confirmPassword: ['', [Validators.required]],
+        newsletterOptIn: [false, [Validators.required]],
+      },
+      { validators: this.passwordMatchValidator }
+    );
 
     // Effect para navegar quando registro for bem-sucedido
     effect(() => {
+      console.log('🔍 RegisterPage: Effect executado!');
+      console.log('📊 RegisterPage: registerSuccess() =', this.registerSuccess());
+
       if (this.registerSuccess()) {
+        console.log('✅ RegisterPage: Registro bem-sucedido, iniciando redirecionamento...');
+        const email = this.registerForm.get('email')?.value;
+        console.log('📧 RegisterPage: Email para redirecionamento:', email);
+
+        // Salvar email no localStorage para persistência
+        if (email) {
+          localStorage.setItem('pendingConfirmationEmail', email);
+        }
+
         setTimeout(() => {
-          this.router.navigate(['/login'], {
-            queryParams: { message: 'Registro realizado com sucesso! Verifique seu email para ativar sua conta.' }
-          });
+          console.log('⏰ RegisterPage: Executando navegação para /confirm-email');
+          this.router
+            .navigate(['/confirm-email'], {
+              state: { email: email },
+              queryParams: {
+                message:
+                  'Registro realizado com sucesso! Verifique seu email para ativar sua conta.',
+              },
+            })
+            .then((success) => {
+              console.log('🚀 RegisterPage: Navegação concluída, sucesso:', success);
+            })
+            .catch((error) => {
+              console.error('❌ RegisterPage: Erro na navegação:', error);
+            });
         }, 2000);
       }
     });
   }
 
   ngOnInit(): void {
+    console.log('🔄 RegisterPage: ngOnInit - Resetando estado do registro');
     // Limpar estado anterior do registro
     this.authService.resetRegisterState();
   }
@@ -94,6 +126,9 @@ export class RegisterPage implements OnInit, OnDestroy {
    * Submete o formulário de registro
    */
   onSubmit(): void {
+    console.log('🚀 RegisterPage: onSubmit() chamado');
+    console.log('📋 RegisterPage: Formulário válido?', this.registerForm.valid);
+
     if (this.registerForm.valid) {
       const formValue = this.registerForm.value;
       const request: CreateUserRequest = {
@@ -101,20 +136,24 @@ export class RegisterPage implements OnInit, OnDestroy {
         lastName: formValue.lastName,
         email: formValue.email,
         password: formValue.password,
-        newsletterOptIn: formValue.newsletterOptIn
+        newsletterOptIn: formValue.newsletterOptIn,
       };
+
+      console.log('📤 RegisterPage: Enviando requisição de registro:', request);
 
       const registerSub = this.authService.register(request).subscribe({
         next: (response) => {
-          console.log('Usuário registrado com sucesso:', response);
+          console.log('✅ RegisterPage: Usuário registrado com sucesso:', response);
+          console.log('📊 RegisterPage: registerSuccess() após resposta =', this.registerSuccess());
         },
         error: (error) => {
-          console.error('Erro no registro:', error);
-        }
+          console.error('❌ RegisterPage: Erro no registro:', error);
+        },
       });
 
       this.subscription.add(registerSub);
     } else {
+      console.log('❌ RegisterPage: Formulário inválido, marcando campos como touched');
       // Marcar todos os campos como touched para mostrar erros
       this.markFormGroupTouched(this.registerForm);
     }
@@ -124,7 +163,7 @@ export class RegisterPage implements OnInit, OnDestroy {
    * Marca todos os campos do formulário como touched
    */
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(field => {
+    Object.keys(formGroup.controls).forEach((field) => {
       const control = formGroup.get(field);
       control?.markAsTouched({ onlySelf: true });
     });
@@ -167,7 +206,8 @@ export class RegisterPage implements OnInit, OnDestroy {
         if (errors['required']) return 'A senha é obrigatória';
         if (errors['minlength']) return 'A senha deve ter pelo menos 8 caracteres';
         if (errors['maxlength']) return 'A senha deve ter no máximo 255 caracteres';
-        if (errors['passwordStrength']) return 'A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial';
+        if (errors['passwordStrength'])
+          return 'A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial';
         break;
       case 'confirmPassword':
         if (errors['required']) return 'A confirmação de senha é obrigatória';
