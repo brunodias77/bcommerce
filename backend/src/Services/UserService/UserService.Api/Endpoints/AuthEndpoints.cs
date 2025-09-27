@@ -52,8 +52,8 @@ public static class AuthEndpoints
             .Produces(401)
             .Produces(500);
 
-        // Endpoint de ativação de conta
-        group.MapPost("/activate", ActivateAccount)
+        // Endpoint para ativação de conta
+        group.MapGet("/activate", ActivateAccount)
             .WithName("ActivateAccount")
             .WithSummary("Ativa uma conta de usuário")
             .WithDescription("Ativa a conta do usuário usando o token de ativação enviado por email")
@@ -70,6 +70,15 @@ public static class AuthEndpoints
             .Produces<LoginUserResponse>(200)
             .Produces<ProblemDetails>(400)
             .Produces<ProblemDetails>(401);
+        
+        group.MapPost("/reset-password", ResetPasswordAsync)
+            .WithName("ResetPassword")
+            .WithSummary("Reset access token using reset password")
+            .Produces<ResetPasswordResponse>(201)
+            .Produces(400)
+            .Produces(401)
+            .Produces(410)
+            .Produces(500);
 
     }
 
@@ -243,37 +252,33 @@ public static class AuthEndpoints
     /// <param name="logger">Logger para registrar eventos</param>
     /// <returns>Resultado da ativação da conta</returns>
     private static async Task<IResult> ActivateAccount(
-        [FromBody] ActivateAccountRequest request,
+        [FromQuery] string token,
         IMediator mediator,
         ILogger<ActivateAccountRequest> logger)
     {
-        var context = new ValidationContext(request);
-        var results = new List<ValidationResult>();
-
-        // Validação usando DataAnnotations
-        bool isValid = Validator.TryValidateObject(request, context, results, true);
-
-        if (!isValid)
+        // Validação básica do token
+        if (string.IsNullOrWhiteSpace(token))
         {
             return Results.BadRequest(new
             {
-                Errors = results.Select(r => r.ErrorMessage).ToList()
+                Errors = new[] { "Token de ativação é obrigatório." }
+            });
+        }
+
+        if (token.Length > 500)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = new[] { "Token deve ter no máximo 500 caracteres." }
             });
         }
 
         try
         {
-            logger.LogInformation("Iniciando ativação de conta via endpoint com token: {Token}", request.Token);
-
-            // Validação básica de entrada
-            if (request == null)
-            {
-                logger.LogWarning("Request nulo recebido no endpoint ActivateAccount");
-                return Results.BadRequest("Dados da requisição são obrigatórios");
-            }
+            logger.LogInformation("Iniciando ativação de conta via endpoint com token: {Token}", token);
 
             // Criar o command
-            var command = new ActivateAccountCommand(request.Token);
+            var command = new ActivateAccountCommand(token);
 
             // Enviar command via MediatR
             var result = await mediator.Send(command);
@@ -290,19 +295,19 @@ public static class AuthEndpoints
 
             if (errorMessage.Contains("inválido") || errorMessage.Contains("já utilizado"))
             {
-                logger.LogWarning("Token de ativação inválido ou já utilizado: {Token}", request.Token);
+                logger.LogWarning("Token de ativação inválido ou já utilizado: {Token}", token);
                 return Results.NotFound(new { Message = errorMessage });
             }
 
             if (errorMessage.Contains("expirado"))
             {
-                logger.LogWarning("Token de ativação expirado: {Token}", request.Token);
+                logger.LogWarning("Token de ativação expirado: {Token}", token);
                 return Results.BadRequest(new { Message = errorMessage });
             }
 
             if (errorMessage.Contains("já foi ativada"))
             {
-                logger.LogWarning("Tentativa de ativar conta já ativa: {Token}", request.Token);
+                logger.LogWarning("Tentativa de ativar conta já ativa: {Token}", token);
                 return Results.Conflict(new { Message = errorMessage });
             }
 
@@ -312,7 +317,7 @@ public static class AuthEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Exceção não tratada no endpoint ActivateAccount para token: {Token}", request?.Token ?? "N/A");
+            logger.LogError(ex, "Exceção não tratada no endpoint ActivateAccount para token: {Token}", token ?? "N/A");
             return Results.Problem(
                 detail: "Erro interno do servidor",
                 statusCode: 500,
@@ -407,6 +412,22 @@ public static class AuthEndpoints
                 statusCode: StatusCodes.Status500InternalServerError);
         }
     }
+
+
+    private static async Task<IResult> ResetPasswordAsync(
+        [FromBody] ResetPasswordRequest request,
+        IKeycloakService keycloakService,
+        ITokenService tokenService,
+        ILogger<RefreshTokenRequest> logger)
+    {
+        return null;
+    }
+    
+    
+    
+    
+    
+    
   
 }
 

@@ -17,4 +17,8 @@
       <ProjectReference Include="..\UserService.Infrastructure\UserService.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Queries\Users\" />
+    </ItemGroup>
+
 </Project>

@@ -290,6 +290,34 @@ public class KeycloakService : IKeycloakService
         }
     }
 
+    public async Task<bool> ResetPasswordAsync(ResetPasswordKeycloak request)
+    {
+        try
+        {
+            var user = await GetUserByEmailAsync(request.Email);
+            if (user == null) return false;
+            
+            
+            // Enviar e-mail para redefinir a senha
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+            
+            var actions = new[] { "UPDATE_PASSWORD" };
+            var json = JsonSerializer.Serialize(actions, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{user.Id}/execute-actions-email";
+            var response = await _httpClient.PutAsync(url, content);
+
+            return response.IsSuccessStatusCode;
+            
+        }catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao redefinir a senha do usuário {Email}", request.Email);
+            throw;
+        }
+    }
+
     private async Task<string> GetAdminTokenAsync()
     {
         try
