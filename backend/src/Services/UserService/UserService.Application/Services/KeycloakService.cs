@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using UserService.Application.Dtos.Keycloak;
 using UserService.Application.Services.Interfaces;
+using UserService.Domain.Exceptions;
 
 namespace UserService.Application.Services;
 
@@ -77,7 +78,7 @@ public class KeycloakService : IKeycloakService
 
             var errorContent = await response.Content.ReadAsStringAsync();
             _logger.LogError("Falha ao criar usuário {Username}: {Error}", request.Username, errorContent);
-            throw new InvalidOperationException($"Falha ao criar usuário: {response.StatusCode}");
+            throw KeycloakException.ForUserCreationError(request.Username, $"Erro ao criar usuário no Keycloak: {response.StatusCode} - {errorContent}");
         }
         catch (Exception ex)
         {
@@ -163,7 +164,17 @@ public class KeycloakService : IKeycloakService
             var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{userId}";
             var response = await _httpClient.DeleteAsync(url);
 
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw KeycloakException.ForUserDeletionError(userId, $"{response.StatusCode} - {errorContent}");
+            }
+
             return response.IsSuccessStatusCode;
+        }
+        catch (KeycloakException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -172,7 +183,7 @@ public class KeycloakService : IKeycloakService
         }
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginUserKeycloak request)
+    public async Task<LoginResponseKeycloak> LoginAsync(LoginUserKeycloak request)
     {
         try
         {
@@ -192,16 +203,156 @@ public class KeycloakService : IKeycloakService
             if (!response.IsSuccessStatusCode)
             {
                 var error = JsonSerializer.Deserialize<KeycloakErrorResponse>(responseContent, _jsonOptions);
-                throw new UnauthorizedAccessException($"Falha no login: {error?.ErrorDescription ?? "Credenciais inválidas"}");
+                throw KeycloakException.ForAuthenticationError($"Erro ao fazer login no Keycloak: {error?.ErrorDescription ?? "Credenciais inválidas"}");
             }
 
-            var loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent, _jsonOptions);
+            var loginResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
             return loginResponse ?? throw new InvalidOperationException("Falha ao desserializar a resposta de login");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro durante o login do usuário {Email}", request.Email);
             throw;
+        }
+    }
+
+    public async Task<bool> SendEmailVerificationAsync(string userId)
+    {
+        try
+        {
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);  
+            
+            
+            var user = await GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Não é possível enviar verificação de e-mail: usuário {UserId} não encontrado", userId);
+                return false;
+            }
+            
+            if (user.EmailVerified)
+            {
+                _logger.LogInformation("E-mail já verificado para o usuário {UserId}", userId);
+                return true;
+            }
+            
+            // Enviar verificação de e-mail usando o endpoint execute-actions-email do Keycloak
+            var actions = new[] { "VERIFY_EMAIL" };
+            var json = JsonSerializer.Serialize(actions, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{userId}/execute-actions-email";
+            var response = await _httpClient.PutAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Verificação de e-mail enviada com sucesso para o usuário {UserId}", userId);
+                return true;
+            }
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Falha ao enviar verificação de e-mail para o usuário {UserId}. Status: {StatusCode}, Error: {Error}", 
+                userId, response.StatusCode, errorContent);
+            return false;
+        }catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao enviar e-mail de verificação para o usuário {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<LoginResponseKeycloak> RefreshTokenAsync(string refreshToken)
+    {
+        try
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("client_id", _settings.FrontendClientId),
+                new KeyValuePair<string, string>("refresh_token", refreshToken)
+            });
+            
+            var url = $"{_settings.Url}/realms/{_settings.Realm}/protocol/openid-connect/token";
+            var response = await _httpClient.PostAsync(url, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = JsonSerializer.Deserialize<KeycloakErrorResponse>(responseContent, _jsonOptions);
+                throw new UnauthorizedAccessException($"Falha na atualização do token: {error?.ErrorDescription}");
+            }
+            var loginResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
+            return loginResponse ?? throw new InvalidOperationException("Falha ao desserializar a resposta de atualização");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar o token");
+            throw;
+        }
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordKeycloak request)
+    {
+        try
+        {
+            var user = await GetUserByEmailAsync(request.Email);
+            if (user == null) return false;
+            
+            
+            // Enviar e-mail para redefinir a senha
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+            
+            var actions = new[] { "UPDATE_PASSWORD" };
+            var json = JsonSerializer.Serialize(actions, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{user.Id}/execute-actions-email";
+            var response = await _httpClient.PutAsync(url, content);
+
+            return response.IsSuccessStatusCode;
+            
+        }catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao redefinir a senha do usuário {Email}", request.Email);
+            throw;
+        }
+    }
+
+    public async Task<bool> UpdatePasswordAsync(string userId, string newPassword)
+    {
+        try
+        {
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+            
+            var passwordData = new
+            {
+                type = "password",
+                value = newPassword,
+                temporary = false
+            };
+            
+            var json = JsonSerializer.Serialize(passwordData, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{userId}/reset-password";
+            var response = await _httpClient.PutAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Senha atualizada com sucesso para o usuário {UserId}", userId);
+                return true;
+            }
+            
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Falha ao atualizar senha para o usuário {UserId}. Status: {StatusCode}, Erro: {Error}", 
+                userId, response.StatusCode, errorContent);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar senha para o usuário {UserId}", userId);
+            return false;
         }
     }
 
@@ -227,7 +378,7 @@ public class KeycloakService : IKeycloakService
                 throw new UnauthorizedAccessException($"Admin token request failed: {error?.ErrorDescription}");
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent, _jsonOptions);
+            var tokenResponse = JsonSerializer.Deserialize<LoginResponseKeycloak>(responseContent, _jsonOptions);
             return tokenResponse?.AccessToken ?? throw new InvalidOperationException("Failed to get admin token");
         }
         catch (Exception ex)

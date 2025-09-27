@@ -4,9 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using BuildingBlocks.Abstractions;
 using UserService.Application.Commands.Users.CreateUser;
 using UserService.Application.Commands.Users.LoginUser;
+using UserService.Application.Commands.Users.ActivateAccount;
+using UserService.Application.Commands.Users.ForgetPassword;
+using UserService.Application.Commands.Users.ResetPassword;
 using UserService.Application.Dtos.Requests;
 using UserService.Application.Dtos.Responses;
+using UserService.Application.Services.Interfaces;
+using UserService.Application.Services;
 using UserService.Domain.Exceptions;
+using UserService.Api.DTOs.Requests;
 
 namespace UserService.Api.Endpoints;
 //
@@ -15,11 +21,20 @@ namespace UserService.Api.Endpoints;
 // /// </summary>
 public static class AuthEndpoints
 {
+    
+
     public static void MapAuthEndpoints(this WebApplication app)
     {
+        // Cria um grupo de rotas com o prefixo "/api/auth"
+        // e adiciona metadados como tags e suporte ao OpenAPI/Swagger
         var group = app.MapGroup("/api/auth")
             .WithTags("Authentication");
+        
+        // ============================
+        // 🔓 Endpoints Públicos (sem autenticação)
+        // ============================
 
+        // Endpoint de registro: cria uma nova conta de usuário
         group.MapPost("/register", CreateUser)
         .WithName("CreateUser")
         .WithSummary("Cria um novo usuário no sistema")
@@ -29,7 +44,7 @@ public static class AuthEndpoints
         .Produces(409)
         .Produces(500);
 
-        // Endpoint de login de usuário
+        // Endpoint de login: recebe email e senha, autentica o usuário e retorna tokens JWT
         group.MapPost("/login", LoginUser)
             .WithName("LoginUser")
             .WithSummary("Autentica um usuário no sistema")
@@ -37,6 +52,45 @@ public static class AuthEndpoints
             .Produces<LoginUserResponse>(200)
             .ProducesValidationProblem(400)
             .Produces(401)
+            .Produces(500);
+
+        // Endpoint para ativação de conta
+        group.MapGet("/activate", ActivateAccount)
+            .WithName("ActivateAccount")
+            .WithSummary("Ativa uma conta de usuário")
+            .WithDescription("Ativa a conta do usuário usando o token de ativação enviado por email")
+            .Produces(200)
+            .ProducesValidationProblem(400)
+            .Produces(404)
+            .Produces(409)
+            .Produces(500);
+        
+        // Endpoint de refresh token: gera um novo access token a partir do refresh token
+        group.MapPost("/refresh", RefreshTokenAsync)
+            .WithName("RefreshToken")
+            .WithSummary("Refresh access token using refresh token")
+            .Produces<LoginUserResponse>(200)
+            .Produces<ProblemDetails>(400)
+            .Produces<ProblemDetails>(401);
+        
+        // Endpoint para solicitar redefinição de senha
+        group.MapPost("/forget-password", ForgetPasswordAsync)
+            .WithName("ForgetPassword")
+            .WithSummary("Solicita redefinição de senha")
+            .WithDescription("Envia um email com link para redefinição de senha")
+            .Produces(200)
+            .ProducesValidationProblem(400)
+            .Produces(404)
+            .Produces(500);
+        
+        group.MapPost("/reset-password", ResetPasswordAsync)
+            .WithName("ResetPassword")
+            .WithSummary("Redefine a senha do usuário")
+            .WithDescription("Redefine a senha usando o token recebido por email")
+            .Produces<ResetPasswordResponse>(200)
+            .Produces(400)
+            .Produces(401)
+            .Produces(410)
             .Produces(500);
 
     }
@@ -202,340 +256,310 @@ public static class AuthEndpoints
             );
         }
     }
+
+    /// <summary>
+    /// Ativa uma conta de usuário usando token de ativação
+    /// </summary>
+    /// <param name="request">Request com o token de ativação</param>
+    /// <param name="mediator">Mediator para envio de commands</param>
+    /// <param name="logger">Logger para registrar eventos</param>
+    /// <returns>Resultado da ativação da conta</returns>
+    private static async Task<IResult> ActivateAccount(
+        [FromQuery] string token,
+        IMediator mediator,
+        ILogger<ActivateAccountRequest> logger)
+    {
+        // Validação básica do token
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Results.BadRequest(new
+            {
+                Errors = new[] { "Token de ativação é obrigatório." }
+            });
+        }
+
+        if (token.Length > 500)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = new[] { "Token deve ter no máximo 500 caracteres." }
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando ativação de conta via endpoint com token: {Token}", token);
+
+            // Criar o command
+            var command = new ActivateAccountCommand(token);
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Tratar o resultado
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Conta ativada com sucesso via endpoint");
+                return Results.Ok(new { Message = "Conta ativada com sucesso! Você já pode fazer login." });
+            }
+
+            // Tratar diferentes tipos de erro baseado na mensagem
+            var errorMessage = result.FirstError;
+
+            if (errorMessage.Contains("inválido") || errorMessage.Contains("já utilizado"))
+            {
+                logger.LogWarning("Token de ativação inválido ou já utilizado: {Token}", token);
+                return Results.NotFound(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("expirado"))
+            {
+                logger.LogWarning("Token de ativação expirado: {Token}", token);
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("já foi ativada"))
+            {
+                logger.LogWarning("Tentativa de ativar conta já ativa: {Token}", token);
+                return Results.Conflict(new { Message = errorMessage });
+            }
+
+            // Outros erros são tratados como Bad Request
+            logger.LogWarning("Erro na ativação de conta: {Error}", errorMessage);
+            return Results.BadRequest(new { Message = errorMessage });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ActivateAccount para token: {Token}", token ?? "N/A");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
+
+
+    private static async Task<IResult> RefreshTokenAsync(
+        [FromBody] RefreshTokenRequest request,
+        IKeycloakService keycloakService,
+        ITokenService tokenService,
+        ILogger<RefreshTokenRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Tenta validar o objeto usando as DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            // Retorna 400 com os erros de validação
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando renovação de token para refresh token: {RefreshTokenPrefix}", 
+                request.RefreshToken[..Math.Min(10, request.RefreshToken.Length)]);
+
+            // Extrai o user_id do refresh token atual
+            var userId = await tokenService.ExtractUserIdFromRefreshTokenAsync(request.RefreshToken);
+            if (userId == null)
+            {
+                logger.LogWarning("Não foi possível extrair UserId do refresh token fornecido");
+                return Results.Problem(
+                    title: "Token inválido",
+                    detail: "O refresh token fornecido é inválido",
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            logger.LogDebug("UserId extraído do refresh token: {UserId}", userId);
+
+            // Chama o Keycloak para renovar o token
+            var keycloakResponse = await keycloakService.RefreshTokenAsync(request.RefreshToken);
+            
+            logger.LogInformation("Token renovado com sucesso no Keycloak. Novo access token expira em: {ExpiresIn}s", 
+                keycloakResponse.ExpiresIn);
+
+            // Calcula a data de expiração do novo refresh token
+            var refreshTokenExpiresAt = DateTime.UtcNow.AddSeconds(keycloakResponse.RefreshExpiresIn);
+
+            // Revoga o refresh token anterior
+            await tokenService.RevokeRefreshTokensAsync(userId.Value, keycloakResponse.RefreshToken);
+            logger.LogDebug("Refresh tokens anteriores revogados para UserId: {UserId}", userId);
+
+            // Salva o novo refresh token no banco de dados
+            await tokenService.SaveRefreshTokenAsync(userId.Value, keycloakResponse.RefreshToken, refreshTokenExpiresAt);
+            logger.LogInformation("Novo refresh token salvo no banco de dados para UserId: {UserId}", userId);
+
+            // Mapeia a resposta do Keycloak para o formato da API
+            var response = new
+            {
+                AccessToken = keycloakResponse.AccessToken,
+                RefreshToken = keycloakResponse.RefreshToken,
+                ExpiresIn = keycloakResponse.ExpiresIn,
+                TokenType = keycloakResponse.TokenType
+            };
+
+            logger.LogInformation("Renovação de token concluída com sucesso para UserId: {UserId}", userId);
+            return Results.Ok(response);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("400"))
+        {
+            logger.LogWarning("Refresh token inválido ou expirado: {Error}", ex.Message);
+            return Results.Problem(
+                title: "Token inválido",
+                detail: "O refresh token fornecido é inválido ou expirou",
+                statusCode: StatusCodes.Status401Unauthorized);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro interno ao renovar token");
+            return Results.Problem(
+                title: "Erro interno",
+                detail: "Ocorreu um erro interno ao processar a renovação do token",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
+
+    /// <summary>
+    /// Solicita redefinição de senha enviando email com token
+    /// </summary>
+    private static async Task<IResult> ForgetPasswordAsync(
+        [FromBody] ForgetPasswordRequest request,
+        IMediator mediator,
+        ILogger<ForgetPasswordRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Validação usando DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando solicitação de redefinição de senha para email: {Email}", request.Email);
+
+            // Criar o command
+            var command = new ForgetPasswordCommand { Email = request.Email! };
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Sempre retorna sucesso por segurança (não revela se email existe)
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Solicitação de redefinição de senha processada para email: {Email}", request.Email);
+                return Results.Ok(new { Message = "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha." });
+            }
+
+            // Log do erro mas retorna sucesso para não revelar informações
+            logger.LogWarning("Erro na solicitação de redefinição de senha: {Error}", result.FirstError);
+            return Results.Ok(new { Message = "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ForgetPassword para email: {Email}", request?.Email ?? "N/A");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Redefine a senha do usuário usando token recebido por email
+    /// </summary>
+    private static async Task<IResult> ResetPasswordAsync(
+        [FromBody] ResetPasswordRequest request,
+        IMediator mediator,
+        ILogger<ResetPasswordRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Validação usando DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando redefinição de senha com token: {TokenPrefix}", 
+                request.Token?[..Math.Min(10, request.Token.Length)] ?? "N/A");
+
+            // Criar o command
+            var command = new ResetPasswordCommand
+            {
+                Token = request.Token!,
+                NewPassword = request.NewPassword!,
+                ConfirmPassword = request.ConfirmPassword!
+            };
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Tratar o resultado
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Senha redefinida com sucesso");
+                return Results.Ok(result.Value);
+            }
+
+            // Tratar diferentes tipos de erro
+            var errorMessage = result.FirstError;
+
+            if (errorMessage.Contains("inválido") || errorMessage.Contains("não encontrado"))
+            {
+                logger.LogWarning("Token de redefinição inválido ou não encontrado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("expirado"))
+            {
+                logger.LogWarning("Token de redefinição expirado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("já utilizado"))
+            {
+                logger.LogWarning("Token de redefinição já utilizado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            // Outros erros são tratados como Bad Request
+            logger.LogWarning("Erro na redefinição de senha: {Error}", errorMessage);
+            return Results.BadRequest(new { Message = errorMessage });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ResetPassword");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
 }
 
-//     {
-//         var group = app.MapGroup("/auth")
-//             .WithTags("Authentication");
-//
-//         // Endpoint de registro de usuário
-//         group.MapPost("/register", CreateUser)
-//             .WithName("CreateUser")
-//             .WithSummary("Cria um novo usuário no sistema")
-//             .WithDescription("Registra um novo usuário no sistema, criando primeiro no Keycloak e depois localmente")
-//             .Produces<CreateUserResponse>(201)
-//             .ProducesValidationProblem(400)
-//             .Produces(409)
-//             .Produces(500);
-//
-//         // Endpoint de login de usuário
-//         group.MapPost("/login", LoginUser)
-//             .WithName("LoginUser")
-//             .WithSummary("Autentica um usuário no sistema")
-//             .WithDescription("Realiza a autenticação do usuário via Keycloak e retorna tokens JWT")
-//             .Produces<LoginUserResponse>(200)
-//             .ProducesValidationProblem(400)
-//             .Produces(401)
-//             .Produces(500);
-//     }
-//
-//     /// <summary>
-//     /// Cria um novo usuário no sistema
-//     /// </summary>
-//     /// <param name="request">Dados do usuário a ser criado</param>
-//     /// <param name="mediator">Mediator para envio de commands</param>
-//     /// <param name="logger">Logger para registrar eventos</param>
-//     /// <returns>Resultado da criação do usuário</returns>
-//     private static async Task<IResult> CreateUser(
-//         [FromBody] CreateUserRequest request,
-//         IMediator mediator,
-//         ILogger<CreateUserRequest> logger)
-//     {
-//         try
-//         {
-//             logger.LogInformation("Iniciando criação de usuário via API: {Email}", request.Email);
-//
-//             // Validar dados de entrada
-//             var validationResults = new List<ValidationResult>();
-//             var validationContext = new ValidationContext(request);
-//             
-//             if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-//             {
-//                 var errors = validationResults.Select(vr => vr.ErrorMessage).ToList();
-//                 logger.LogWarning("Dados de entrada inválidos para criação de usuário: {Errors}", string.Join(", ", errors));
-//                 
-//                 return Results.ValidationProblem(validationResults.ToDictionary(
-//                     vr => vr.MemberNames.FirstOrDefault() ?? "Unknown",
-//                     vr => new[] { vr.ErrorMessage ?? "Erro de validação" }
-//                 ));
-//             }
-//
-//             // Criar o command
-//             var command = new CreateUserCommand
-//             {
-//                 Name = request.Name,
-//                 Email = request.Email,
-//                 Password = request.Password,
-//                 Phone = request.Phone
-//             };
-//
-//             // Enviar command via Mediator
-//             await mediator.Send(command);
-//
-//             logger.LogInformation("Usuário criado com sucesso via API: {Email}", request.Email);
-//
-//             // Retornar resposta de sucesso
-//             return Results.Created($"/users/{request.Email}", new CreateUserResponse
-//             {
-//                 Success = true,
-//                 Message = "Usuário criado com sucesso",
-//                 Email = request.Email,
-//                 Name = request.Name
-//             });
-//         }
-//         catch (InvalidOperationException ex)
-//         {
-//             logger.LogWarning(ex, "Erro de negócio ao criar usuário: {Email}", request.Email);
-//             
-//             return Results.Conflict(new CreateUserResponse
-//             {
-//                 Success = false,
-//                 Message = ex.Message,
-//                 Email = request.Email
-//             });
-//         }
-//         catch (Exception ex)
-//         {
-//             logger.LogError(ex, "Erro inesperado ao criar usuário via API: {Email}", request.Email);
-//             
-//             return Results.Problem(
-//                 detail: "Erro interno do servidor ao criar usuário",
-//                 title: "Erro interno",
-//                 statusCode: 500);
-//         }
-//     }
-//
-//     /// <summary>
-//     /// Autentica um usuário no sistema
-//     /// </summary>
-//     /// <param name="request">Dados de login do usuário</param>
-//     /// <param name="mediator">Mediator para envio de commands</param>
-//     /// <param name="logger">Logger para registrar eventos</param>
-//     /// <returns>Resultado da autenticação com tokens JWT</returns>
-//     private static async Task<IResult> LoginUser(
-//         [FromBody] LoginUserRequest request,
-//         IMediator mediator,
-//         ILogger<LoginUserRequest> logger)
-//     {
-//         try
-//         {
-//             logger.LogInformation("Iniciando autenticação de usuário via API: {Email}", request.Email);
-//
-//             // Validar dados de entrada
-//             var validationResults = new List<ValidationResult>();
-//             var validationContext = new ValidationContext(request);
-//             
-//             if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-//             {
-//                 var errors = validationResults.Select(vr => vr.ErrorMessage).ToList();
-//                 logger.LogWarning("Dados de entrada inválidos para login: {Errors}", string.Join(", ", errors));
-//                 
-//                 return Results.ValidationProblem(validationResults.ToDictionary(
-//                     vr => vr.MemberNames.FirstOrDefault() ?? "Unknown",
-//                     vr => new[] { vr.ErrorMessage ?? "Erro de validação" }
-//                 ));
-//             }
-//
-//             // Criar o command
-//             var command = new LoginUserCommand
-//             {
-//                 Email = request.Email,
-//                 Password = request.Password
-//             };
-//
-//             // Enviar command via Mediator
-//             var response = await mediator.Send(command);
-//
-//             if (response.Success)
-//             {
-//                 logger.LogInformation("Usuário autenticado com sucesso via API: {Email}", request.Email);
-//                 return Results.Ok(response);
-//             }
-//             else
-//             {
-//                 logger.LogWarning("Falha na autenticação do usuário: {Email} - {Message}", request.Email, response.Message);
-//                 return Results.Unauthorized();
-//             }
-//         }
-//         catch (UnauthorizedAccessException ex)
-//         {
-//             logger.LogWarning(ex, "Credenciais inválidas para login: {Email}", request.Email);
-//             return Results.Unauthorized();
-//         }
-//         catch (Exception ex)
-//         {
-//             logger.LogError(ex, "Erro inesperado ao autenticar usuário via API: {Email}", request.Email);
-//             
-//             return Results.Problem(
-//                 detail: "Erro interno do servidor ao autenticar usuário",
-//                 title: "Erro interno",
-//                 statusCode: 500);
-//         }
-//     }
-// }
-//
-// /// <summary>
-// /// Request para login de usuário
-// /// </summary>
-// public class LoginUserRequest
-// {
-//     /// <summary>
-//     /// Email do usuário
-//     /// </summary>
-//     [Required(ErrorMessage = "O email é obrigatório")]
-//     [EmailAddress(ErrorMessage = "Email deve ter um formato válido")]
-//     public string Email { get; set; } = string.Empty;
-//
-//     /// <summary>
-//     /// Senha do usuário
-//     /// </summary>
-//     [Required(ErrorMessage = "A senha é obrigatória")]
-//     public string Password { get; set; } = string.Empty;
-// }
-//
-// /// <summary>
-// /// Request para criação de usuário
-// /// </summary>
-// public class CreateUserRequest
-// {
-//     /// <summary>
-//     /// Nome completo do usuário
-//     /// </summary>
-//     [Required(ErrorMessage = "O nome é obrigatório")]
-//     [StringLength(100, MinimumLength = 2, ErrorMessage = "O nome deve ter entre 2 e 100 caracteres")]
-//     public string Name { get; set; } = string.Empty;
-//
-//     /// <summary>
-//     /// Email do usuário (deve ser único no sistema)
-//     /// </summary>
-//     [Required(ErrorMessage = "O email é obrigatório")]
-//     [EmailAddress(ErrorMessage = "Email deve ter um formato válido")]
-//     [StringLength(255, ErrorMessage = "O email deve ter no máximo 255 caracteres")]
-//     public string Email { get; set; } = string.Empty;
-//
-//     /// <summary>
-//     /// Senha do usuário
-//     /// </summary>
-//     [Required(ErrorMessage = "A senha é obrigatória")]
-//     [KeycloakPasswordPolicy(ErrorMessage = "A senha deve atender aos critérios de segurança: mínimo 8 caracteres, pelo menos 1 letra maiúscula, 1 minúscula, 1 dígito e 1 caractere especial")]
-//     public string Password { get; set; } = string.Empty;
-//
-//     /// <summary>
-//     /// Telefone do usuário
-//     /// </summary>
-//     [Required(ErrorMessage = "O telefone é obrigatório")]
-//     [StringLength(20, MinimumLength = 10, ErrorMessage = "O telefone deve ter entre 10 e 20 caracteres")]
-//     public string Phone { get; set; } = string.Empty;
-// }
-//
-// /// <summary>
-// /// Atributo de validação que implementa as políticas de senha do Keycloak
-// /// </summary>
-// public class KeycloakPasswordPolicyAttribute : ValidationAttribute
-// {
-//     public override bool IsValid(object? value)
-//     {
-//         if (value is not string password || string.IsNullOrEmpty(password))
-//             return false;
-//
-//         // Mínimo 8 caracteres
-//         if (password.Length < 8)
-//             return false;
-//
-//         // Pelo menos 1 letra maiúscula
-//         if (!Regex.IsMatch(password, @"[A-Z]"))
-//             return false;
-//
-//         // Pelo menos 1 letra minúscula
-//         if (!Regex.IsMatch(password, @"[a-z]"))
-//             return false;
-//
-//         // Pelo menos 1 dígito
-//         if (!Regex.IsMatch(password, @"[0-9]"))
-//             return false;
-//
-//         // Pelo menos 1 caractere especial
-//         if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
-//             return false;
-//
-//         return true;
-//     }
-//
-//     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
-//     {
-//         if (value is not string password || string.IsNullOrEmpty(password))
-//             return new ValidationResult(ErrorMessage ?? "A senha é obrigatória");
-//
-//         var errors = new List<string>();
-//
-//         // Verificar comprimento mínimo
-//         if (password.Length < 8)
-//             errors.Add("mínimo 8 caracteres");
-//
-//         // Verificar letra maiúscula
-//         if (!Regex.IsMatch(password, @"[A-Z]"))
-//             errors.Add("pelo menos 1 letra maiúscula");
-//
-//         // Verificar letra minúscula
-//         if (!Regex.IsMatch(password, @"[a-z]"))
-//             errors.Add("pelo menos 1 letra minúscula");
-//
-//         // Verificar dígito
-//         if (!Regex.IsMatch(password, @"[0-9]"))
-//             errors.Add("pelo menos 1 dígito");
-//
-//         // Verificar caractere especial
-//         if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
-//             errors.Add("pelo menos 1 caractere especial (!@#$%^&*()_+-=[]{};\':\"\\|,.<>/?)");
-//
-//         // Verificar se não é igual ao email (se disponível no contexto)
-//         if (validationContext.ObjectInstance is CreateUserRequest request)
-//         {
-//             if (!string.IsNullOrEmpty(request.Email) && 
-//                 string.Equals(password, request.Email, StringComparison.OrdinalIgnoreCase))
-//             {
-//                 errors.Add("não pode ser igual ao email");
-//             }
-//
-//             if (!string.IsNullOrEmpty(request.Name) && 
-//                 string.Equals(password, request.Name, StringComparison.OrdinalIgnoreCase))
-//             {
-//                 errors.Add("não pode ser igual ao nome");
-//             }
-//         }
-//
-//         if (errors.Any())
-//         {
-//             var errorMessage = $"A senha deve atender aos seguintes critérios: {string.Join(", ", errors)}";
-//             return new ValidationResult(errorMessage, new[] { validationContext.MemberName ?? "Password" });
-//         }
-//
-//         return ValidationResult.Success;
-//     }
-// }
-//
-// /// <summary>
-// /// Response da criação de usuário
-// /// </summary>
-// public class CreateUserResponse
-// {
-//     /// <summary>
-//     /// Indica se a operação foi bem-sucedida
-//     /// </summary>
-//     public bool Success { get; set; }
-//
-//     /// <summary>
-//     /// Mensagem descritiva do resultado
-//     /// </summary>
-//     public string Message { get; set; } = string.Empty;
-//
-//     /// <summary>
-//     /// Email do usuário criado
-//     /// </summary>
-//     public string? Email { get; set; }
-//
-//     /// <summary>
-//     /// Nome do usuário criado
-//     /// </summary>
-//     public string? Name { get; set; }
-// }

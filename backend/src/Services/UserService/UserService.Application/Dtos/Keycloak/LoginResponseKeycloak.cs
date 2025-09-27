@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace UserService.Application.Dtos.Keycloak;
 
-public record LoginResponse(
+public record LoginResponseKeycloak(
     [property: JsonPropertyName("access_token")] string AccessToken,
     [property: JsonPropertyName("expires_in")] int ExpiresIn,
     [property: JsonPropertyName("refresh_expires_in")] int RefreshExpiresIn,

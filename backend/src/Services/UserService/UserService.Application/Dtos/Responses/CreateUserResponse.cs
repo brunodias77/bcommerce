@@ -13,35 +13,35 @@ public class CreateUserResponse
     /// <summary>
     /// Email do usuário criado
     /// </summary>
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     /// <summary>
     /// Primeiro nome do usuário
     /// </summary>
-    public string FirstName { get; set; } = string.Empty;
+    public string? FirstName { get; set; }
 
     /// <summary>
     /// Último nome do usuário
     /// </summary>
-    public string LastName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
 
     /// <summary>
     /// Nome completo do usuário
     /// </summary>
-    public string FullName { get; set; } = string.Empty;
+    public string? FullName { get; set; }
 
     /// <summary>
     /// Mensagem de sucesso
     /// </summary>
-    public string Message { get; set; } = string.Empty;
+    public string? Message { get; set; }
 
     /// <summary>
     /// Data e hora da criação
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
     /// Indica se a operação foi bem-sucedida
     /// </summary>
-    public bool Success { get; set; } = true;
+    public bool Success { get; set; }
 }

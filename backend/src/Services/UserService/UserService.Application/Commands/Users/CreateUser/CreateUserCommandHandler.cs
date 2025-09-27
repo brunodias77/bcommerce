@@ -3,6 +3,7 @@ using BuildingBlocks.Abstractions;
 using BuildingBlocks.Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 using UserService.Application.Dtos.Keycloak;
 using UserService.Application.Services.Interfaces;
 using UserService.Domain.Entities;
@@ -16,6 +17,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
     private readonly UserManagementDbContext _context;
     private readonly IPasswordEncripter _passwordEncripter;
     private readonly IKeycloakService _keycloakService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<CreateUserCommandHandler> _logger;
     
     /// <summary>
@@ -24,16 +26,19 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
     /// <param name="context">Contexto do banco de dados</param>
     /// <param name="passwordEncripter">Serviço para criptografia de senhas</param>
     /// <param name="keycloakService">Serviço de integração com Keycloak</param>
+    /// <param name="emailService">Serviço para envio de emails</param>
     /// <param name="logger">Logger para registrar eventos</param>
     public CreateUserCommandHandler(
         UserManagementDbContext context,
         IPasswordEncripter passwordEncripter,
         IKeycloakService keycloakService,
+        IEmailService emailService,
         ILogger<CreateUserCommandHandler> logger)
     {
         _context = context;
         _passwordEncripter = passwordEncripter;
         _keycloakService = keycloakService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -123,18 +128,58 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 Cpf = string.Empty, // TODO: Implementar validação de CPF
                 DateOfBirth = null, // TODO: Adicionar campo no command se necessário
                 NewsletterOptIn = request.NewsletterOptIn,
-                Status = UserStatus.Ativo,
+                Status = UserStatus.Inativo, // Usuário inativo até ativar a conta
                 Role = UserRole.Customer,
                 KeycloakId = Guid.Parse(userKeycloakId) // Armazena o ID do Keycloak (sempre disponível neste ponto)
             };
             
-            // Adiciona o usuário ao contexto
+            // Gera token de ativação
+            var activationToken = GenerateActivationToken();
+            var userToken = new UserToken
+            {
+                TokenId = Guid.NewGuid(),
+                UserId = user.UserId,
+                TokenType = UserTokenType.EmailVerification,
+                TokenValue = activationToken,
+                ExpiresAt = DateTime.UtcNow.AddHours(24), // Token expira em 24 horas
+                CreatedAt = DateTime.UtcNow,
+                Version = 1
+            };
+            
+            // Adiciona o usuário e token ao contexto
             _context.Users.Add(user);
+            _context.UserTokens.Add(userToken);
             
             // Salva as alterações no banco de dados
             await _context.SaveChangesAsync(cancellationToken);
             
-            _logger.LogInformation("Usuário criado com sucesso localmente e no Keycloak. Email: {Email}, KeycloakId: {KeycloakUserId}, UserId: {UserId}", 
+            // Envia email de ativação
+            try
+            {
+                var emailResult = await _emailService.SendAccountActivationEmailAsync(
+                    user.Email, 
+                    user.FirstName, 
+                    activationToken, 
+                    cancellationToken);
+                
+                if (!emailResult.IsSuccess)
+                {
+                    _logger.LogWarning("Falha ao enviar email de ativação para: {Email}. Erro: {Error}", 
+                        user.Email, emailResult.FirstError);
+                    // Não falha a criação do usuário se o email não for enviado
+                }
+                else
+                {
+                    _logger.LogInformation("Email de ativação enviado com sucesso para: {Email}", user.Email);
+                }
+            }
+            catch (Exception emailEx)
+            {
+                _logger.LogError(emailEx, "Erro inesperado ao enviar email de ativação para: {Email}", user.Email);
+                // Não falha a criação do usuário se houver erro no envio do email
+            }
+            
+            _logger.LogInformation("Usuário criado com sucesso localmente e no Keycloak. Email: {Email}, KeycloakId: {KeycloakUserId}, UserId: {UserId}. Status: Inativo (aguardando ativação)", 
                 request.Email, userKeycloakId, user.UserId);
             
             return Result<Guid>.Success(user.UserId);
@@ -160,5 +205,20 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             
             return Result<Guid>.Failure("Erro interno do servidor ao criar usuário. Tente novamente.");
         }
+    }
+    
+    /// <summary>
+    /// Gera um token de ativação seguro
+    /// </summary>
+    /// <returns>Token de ativação como string</returns>
+    private static string GenerateActivationToken()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[32]; // 256 bits
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", ""); // URL-safe base64
     }
 }

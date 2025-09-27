@@ -13,6 +13,7 @@ public static class InfraDependencyInjection
         AddDatabase(services, configuration);
         AddKeycloak(services, configuration);
         AddLogging(services, configuration);
+        AddEmailSettings(services, configuration);
         AddServices(services);
     }
 
@@ -76,6 +77,16 @@ public static class InfraDependencyInjection
         });
     }
 
+    /// <summary>
+    /// Configura as configurações de email para envio de notificações
+    /// </summary>
+    private static void AddEmailSettings(IServiceCollection services, IConfiguration configuration)
+    {
+        // Registra as configurações de email no container de DI
+        services.Configure<EmailSettings>(
+            configuration.GetSection(EmailSettings.SectionName));
+    }
+
     private static void AddServices(IServiceCollection services)
     {
         // Unit of Work
@@ -86,6 +97,8 @@ public static class InfraDependencyInjection
         
         // Serviços de infraestrutura
         services.AddScoped<IPasswordEncripter, PasswordEncripter>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<UserService.Application.Services.ITokenService, UserService.Application.Services.TokenService>();
         // services.AddScoped<IJwtService, JwtService>();
         // services.AddScoped<IPasswordHasher, PasswordHasher>();
         
