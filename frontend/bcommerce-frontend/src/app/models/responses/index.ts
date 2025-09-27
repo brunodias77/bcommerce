@@ -37,16 +37,19 @@ export interface ErrorResponse {
 /**
  * Interface para resposta de login de usuário
  * Baseada na DTO LoginUserResponse do backend
+ * Os campos seguem o padrão snake_case retornado pelo backend
  */
 export interface LoginUserResponse {
   /** Token de acesso JWT */
-  accessToken: string;
+  access_token: string;
   /** Tempo de expiração do token de acesso em segundos */
-  expiresIn: number;
+  expires_in: number;
   /** Tempo de expiração do refresh token em segundos */
-  refreshExpiresIn: number;
+  refresh_expires_in: number;
   /** Token de refresh para renovar o access token */
-  refreshToken: string;
+  refresh_token: string;
   /** Tipo do token (geralmente 'Bearer') */
-  tokenType: string;
+  token_type: string;
+  /** Escopo do token */
+  scope?: string;
 }

@@ -278,19 +278,48 @@ export class AuthService {
    * @param response Resposta do login contendo os tokens
    */
   private storeTokens(response: LoginUserResponse): void {
-    const expiresAt = new Date(Date.now() + response.expiresIn * 1000);
+    console.log('Dados recebidos para armazenamento:', response);
     
-    localStorage.setItem('access_token', response.accessToken);
-    localStorage.setItem('refresh_token', response.refreshToken);
-    localStorage.setItem('token_expires_at', expiresAt.toISOString());
-    localStorage.setItem('token_type', response.tokenType);
+    // Validar se expires_in é um número válido e maior que 0
+    const expiresInSeconds = response.expires_in && response.expires_in > 0 ? response.expires_in : 3600; // Default: 1 hora
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
     
-    // Atualizar signals
-    this._accessToken.set(response.accessToken);
-    this._refreshToken.set(response.refreshToken);
-    this._tokenExpiresAt.set(expiresAt);
+    // Validar se a data criada é válida
+    if (isNaN(expiresAt.getTime())) {
+      console.error('Erro ao calcular data de expiração do token:', {
+        expires_in: response.expires_in,
+        expiresInSeconds,
+        currentTime: Date.now()
+      });
+      // Usar data padrão de 1 hora a partir de agora
+      const fallbackExpiresAt = new Date(Date.now() + 3600 * 1000);
+      localStorage.setItem('token_expires_at', fallbackExpiresAt.toISOString());
+      this._tokenExpiresAt.set(fallbackExpiresAt);
+    } else {
+      localStorage.setItem('token_expires_at', expiresAt.toISOString());
+      this._tokenExpiresAt.set(expiresAt);
+    }
+    
+    // Armazenar tokens no localStorage
+    if (response.access_token) {
+      localStorage.setItem('access_token', response.access_token);
+      this._accessToken.set(response.access_token);
+    }
+    
+    if (response.refresh_token) {
+      localStorage.setItem('refresh_token', response.refresh_token);
+      this._refreshToken.set(response.refresh_token);
+    }
+    
+    if (response.token_type) {
+      localStorage.setItem('token_type', response.token_type);
+    }
+    
+    // Atualizar signals de estado
     this._authState.set('authenticated');
     this._loginState.set('success');
+    
+    console.log('Tokens armazenados com sucesso no localStorage');
   }
   
   /**
