@@ -5,6 +5,8 @@ using BuildingBlocks.Abstractions;
 using UserService.Application.Commands.Users.CreateUser;
 using UserService.Application.Commands.Users.LoginUser;
 using UserService.Application.Commands.Users.ActivateAccount;
+using UserService.Application.Commands.Users.ForgetPassword;
+using UserService.Application.Commands.Users.ResetPassword;
 using UserService.Application.Dtos.Requests;
 using UserService.Application.Dtos.Responses;
 using UserService.Application.Services.Interfaces;
@@ -71,10 +73,21 @@ public static class AuthEndpoints
             .Produces<ProblemDetails>(400)
             .Produces<ProblemDetails>(401);
         
+        // Endpoint para solicitar redefinição de senha
+        group.MapPost("/forget-password", ForgetPasswordAsync)
+            .WithName("ForgetPassword")
+            .WithSummary("Solicita redefinição de senha")
+            .WithDescription("Envia um email com link para redefinição de senha")
+            .Produces(200)
+            .ProducesValidationProblem(400)
+            .Produces(404)
+            .Produces(500);
+        
         group.MapPost("/reset-password", ResetPasswordAsync)
             .WithName("ResetPassword")
-            .WithSummary("Reset access token using reset password")
-            .Produces<ResetPasswordResponse>(201)
+            .WithSummary("Redefine a senha do usuário")
+            .WithDescription("Redefine a senha usando o token recebido por email")
+            .Produces<ResetPasswordResponse>(200)
             .Produces(400)
             .Produces(401)
             .Produces(410)
@@ -414,20 +427,139 @@ public static class AuthEndpoints
     }
 
 
+    /// <summary>
+    /// Solicita redefinição de senha enviando email com token
+    /// </summary>
+    private static async Task<IResult> ForgetPasswordAsync(
+        [FromBody] ForgetPasswordRequest request,
+        IMediator mediator,
+        ILogger<ForgetPasswordRequest> logger)
+    {
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Validação usando DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando solicitação de redefinição de senha para email: {Email}", request.Email);
+
+            // Criar o command
+            var command = new ForgetPasswordCommand { Email = request.Email! };
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Sempre retorna sucesso por segurança (não revela se email existe)
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Solicitação de redefinição de senha processada para email: {Email}", request.Email);
+                return Results.Ok(new { Message = "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha." });
+            }
+
+            // Log do erro mas retorna sucesso para não revelar informações
+            logger.LogWarning("Erro na solicitação de redefinição de senha: {Error}", result.FirstError);
+            return Results.Ok(new { Message = "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ForgetPassword para email: {Email}", request?.Email ?? "N/A");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Redefine a senha do usuário usando token recebido por email
+    /// </summary>
     private static async Task<IResult> ResetPasswordAsync(
         [FromBody] ResetPasswordRequest request,
-        IKeycloakService keycloakService,
-        ITokenService tokenService,
-        ILogger<RefreshTokenRequest> logger)
+        IMediator mediator,
+        ILogger<ResetPasswordRequest> logger)
     {
-        return null;
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        // Validação usando DataAnnotations
+        bool isValid = Validator.TryValidateObject(request, context, results, true);
+
+        if (!isValid)
+        {
+            return Results.BadRequest(new
+            {
+                Errors = results.Select(r => r.ErrorMessage).ToList()
+            });
+        }
+
+        try
+        {
+            logger.LogInformation("Iniciando redefinição de senha com token: {TokenPrefix}", 
+                request.Token?[..Math.Min(10, request.Token.Length)] ?? "N/A");
+
+            // Criar o command
+            var command = new ResetPasswordCommand
+            {
+                Token = request.Token!,
+                NewPassword = request.NewPassword!,
+                ConfirmPassword = request.ConfirmPassword!
+            };
+
+            // Enviar command via MediatR
+            var result = await mediator.Send(command);
+
+            // Tratar o resultado
+            if (result.IsSuccess)
+            {
+                logger.LogInformation("Senha redefinida com sucesso");
+                return Results.Ok(result.Value);
+            }
+
+            // Tratar diferentes tipos de erro
+            var errorMessage = result.FirstError;
+
+            if (errorMessage.Contains("inválido") || errorMessage.Contains("não encontrado"))
+            {
+                logger.LogWarning("Token de redefinição inválido ou não encontrado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("expirado"))
+            {
+                logger.LogWarning("Token de redefinição expirado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            if (errorMessage.Contains("já utilizado"))
+            {
+                logger.LogWarning("Token de redefinição já utilizado");
+                return Results.BadRequest(new { Message = errorMessage });
+            }
+
+            // Outros erros são tratados como Bad Request
+            logger.LogWarning("Erro na redefinição de senha: {Error}", errorMessage);
+            return Results.BadRequest(new { Message = errorMessage });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exceção não tratada no endpoint ResetPassword");
+            return Results.Problem(
+                detail: "Erro interno do servidor",
+                statusCode: 500,
+                title: "Erro Interno"
+            );
+        }
     }
-    
-    
-    
-    
-    
-    
-  
 }
 

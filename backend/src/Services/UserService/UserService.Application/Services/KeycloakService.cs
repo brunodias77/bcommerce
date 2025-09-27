@@ -318,6 +318,44 @@ public class KeycloakService : IKeycloakService
         }
     }
 
+    public async Task<bool> UpdatePasswordAsync(string userId, string newPassword)
+    {
+        try
+        {
+            var adminToken = await GetAdminTokenAsync();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+            
+            var passwordData = new
+            {
+                type = "password",
+                value = newPassword,
+                temporary = false
+            };
+            
+            var json = JsonSerializer.Serialize(passwordData, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var url = $"{_settings.Url}/admin/realms/{_settings.Realm}/users/{userId}/reset-password";
+            var response = await _httpClient.PutAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Senha atualizada com sucesso para o usuário {UserId}", userId);
+                return true;
+            }
+            
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Falha ao atualizar senha para o usuário {UserId}. Status: {StatusCode}, Erro: {Error}", 
+                userId, response.StatusCode, errorContent);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar senha para o usuário {UserId}", userId);
+            return false;
+        }
+    }
+
     private async Task<string> GetAdminTokenAsync()
     {
         try

@@ -14,18 +14,25 @@ namespace UserService.Application.Commands.Users.ForgetPassword;
 
 public class ForgetPasswordCommandHandler : IRequestHandler<ForgetPasswordCommand, Result<string>>
 {
-    public ForgetPasswordCommandHandler(IKeycloakService keycloakService, UserManagementDbContext context, ITokenService tokenService, ILogger<LoginUserCommandHandler> logger)
+    public ForgetPasswordCommandHandler(
+        IKeycloakService keycloakService, 
+        UserManagementDbContext context, 
+        ITokenService tokenService, 
+        IEmailService emailService,
+        ILogger<ForgetPasswordCommandHandler> logger)
     {
         _keycloakService = keycloakService;
         _context = context;
         _tokenService = tokenService;
+        _emailService = emailService;
         _logger = logger;
     }
 
     private readonly IKeycloakService _keycloakService;
     private readonly UserManagementDbContext _context;
     private readonly ITokenService _tokenService;
-    private readonly ILogger<LoginUserCommandHandler> _logger;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<ForgetPasswordCommandHandler> _logger;
     public async Task<Result<string>> Handle(ForgetPasswordCommand request, CancellationToken cancellationToken)
     {
         // Buscar o email no banco de dados
@@ -54,13 +61,13 @@ public class ForgetPasswordCommandHandler : IRequestHandler<ForgetPasswordComman
          }
         
          // Criar o token
-         var activationToken = GenerateToken();
+         var resetToken = GenerateToken();
          var userToken = new UserToken
          {
              TokenId = Guid.NewGuid(),
              UserId = user.UserId,
              TokenType = UserTokenType.PasswordReset,
-             TokenValue = activationToken,
+             TokenValue = resetToken,
              ExpiresAt = DateTime.UtcNow.AddHours(1), 
              CreatedAt = DateTime.UtcNow,
              Version = 1
@@ -69,10 +76,25 @@ public class ForgetPasswordCommandHandler : IRequestHandler<ForgetPasswordComman
          _context.UserTokens.Add(userToken);
          await _context.SaveChangesAsync(cancellationToken);
 
-         // TODO: criar e enviar o email com o token para que ele possa redefinir a senha
-        
-        
-        throw new NotImplementedException();
+         // Enviar email de redefinição de senha
+         var emailResult = await _emailService.SendPasswordResetEmailAsync(
+             user.Email, 
+             user.FirstName, 
+             resetToken, 
+             cancellationToken);
+
+         if (!emailResult.IsSuccess)
+         {
+             _logger.LogError("Falha ao enviar email de redefinição para: {Email}. Erro: {Error}", 
+                 user.Email, emailResult.FirstError);
+         }
+         else
+         {
+             _logger.LogInformation("Email de redefinição enviado com sucesso para: {Email}", user.Email);
+         }
+
+         // Retorna sempre a mesma mensagem por segurança (não revela se o email existe)
+         return Result<string>.Success("Se houver uma conta associada a este e-mail, um link de redefinição será enviado.");
     }
     
     private static string GenerateToken()
