@@ -14,3 +14,14 @@ export interface CreateUserRequest {
   /** Indica se o usuário optou por receber newsletter */
   newsletterOptIn: boolean;
 }
+
+/**
+ * Interface para requisição de login de usuário
+ * Baseada na DTO LoginUserRequest do backend
+ */
+export interface LoginUserRequest {
+  /** Email do usuário (formato válido, máximo 255 caracteres) */
+  email: string;
+  /** Senha do usuário */
+  password: string;
+}

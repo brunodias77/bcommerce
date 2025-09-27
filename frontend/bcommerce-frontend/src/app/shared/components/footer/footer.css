@@ -1,0 +1,117 @@
+:host {
+  display: block;
+}
+
+/* Animações suaves para links */
+footer a {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Efeito hover nos links */
+footer a:hover {
+  transform: translateX(4px);
+}
+
+/* Animação para redes sociais */
+.social-link {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.social-link:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Efeito no input de newsletter */
+input[type='email']:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Animação do botão de newsletter */
+button {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsividade aprimorada */
+@media (max-width: 768px) {
+  .grid {
+    gap: 2rem;
+  }
+
+  .newsletter-form {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .newsletter-form input {
+    border-radius: 0.5rem;
+  }
+
+  .newsletter-form button {
+    border-radius: 0.5rem;
+  }
+}
+
+/* Efeito de fade-in para seções */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+footer > div {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Gradiente sutil no background */
+footer {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+/* Efeito de brilho nos ícones das redes sociais */
+.social-icon {
+  position: relative;
+  overflow: hidden;
+}
+
+.social-icon::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: all 0.6s;
+  opacity: 0;
+}
+
+.social-icon:hover::before {
+  animation: shine 0.6s ease-in-out;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+    opacity: 0;
+  }
+}

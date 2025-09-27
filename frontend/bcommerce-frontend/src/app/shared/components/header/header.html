@@ -1,0 +1,274 @@
+<header
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out bg-white shadow-md"
+  [class]="headerClasses()"
+>
+  <!-- Container interno que muda com o scroll -->
+  <div [class]="containerClasses()">
+    <nav class="flex items-center justify-between" [class]="navClasses()">
+      <!-- Logo -->
+      <div class="flex items-center space-x-2">
+        <a routerLink="/" class="flex items-center space-x-2" (click)="scrollToTop()">
+          <div [class]="logoIconClasses()">
+            <span class="text-white font-bold" [class]="logoTextClasses()">D</span>
+          </div>
+          <span class="font-bold" [class]="logoClasses()">DCommerce</span>
+        </a>
+      </div>
+
+      <!-- Search Bar (Responsive - visible on larger screens when scrolled) -->
+      <div [class]="searchBarClasses()">
+        <div class="relative w-full">
+          <input
+            type="text"
+            placeholder="Buscar produtos..."
+            [class]="searchInputClasses()"
+          />
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg
+              class="w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <div class="hidden lg:flex items-center space-x-6">
+        <a
+          routerLink="/"
+          routerLinkActive="text-blue-600"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="font-medium transition-colors hover:text-blue-600"
+          [class]="linkClasses()"
+        >
+          Início
+        </a>
+        <a
+          routerLink="/produtos"
+          routerLinkActive="text-blue-600"
+          class="font-medium transition-colors hover:text-blue-600"
+          [class]="linkClasses()"
+        >
+          Produtos
+        </a>
+        <a
+          routerLink="/categorias"
+          routerLinkActive="text-blue-600"
+          class="font-medium transition-colors hover:text-blue-600"
+          [class]="linkClasses()"
+        >
+          Categorias
+        </a>
+        <a
+          routerLink="/ofertas"
+          routerLinkActive="text-blue-600"
+          class="font-medium transition-colors hover:text-blue-600"
+          [class]="linkClasses()"
+        >
+          Ofertas
+        </a>
+        <a
+          routerLink="/contato"
+          routerLinkActive="text-blue-600"
+          class="font-medium transition-colors hover:text-blue-600"
+          [class]="linkClasses()"
+        >
+          Contato
+        </a>
+      </div>
+
+      <!-- User Actions -->
+      <div class="flex items-center" [class]="userActionsClasses()">
+        <!-- Favorites/Wishlist -->
+        <button
+          class="relative rounded-lg transition-all hover:scale-105"
+          [class]="iconButtonClasses()"
+          title="Lista de Desejos"
+        >
+          <svg
+            [class]="iconClasses()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- Cart -->
+        <button
+          class="relative rounded-lg transition-all hover:scale-105"
+          [class]="iconButtonClasses()"
+          title="Carrinho de Compras"
+        >
+          <svg
+            [class]="iconClasses()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h12.5M17 13v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6"
+            ></path>
+          </svg>
+          <span [class]="cartBadgeClasses()">{{ cartItemsCount() }}</span>
+        </button>
+
+        <!-- User Menu -->
+        <button
+          class="rounded-lg transition-all hover:scale-105"
+          [class]="iconButtonClasses()"
+          title="Minha Conta"
+        >
+          <svg
+            [class]="iconClasses()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- Mobile Menu Button -->
+        <button
+          class="lg:hidden rounded-lg transition-all hover:scale-105"
+          [class]="iconButtonClasses()"
+          (click)="toggleMobileMenu()"
+        >
+          <svg
+            class="transition-transform"
+            [class]="iconClasses()"
+            [class.rotate-90]="isMobileMenuOpen()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="lg:hidden overflow-hidden" [class.hidden]="!isMobileMenuOpen()">
+      <div class="px-2 pt-2 pb-3 space-y-1 border-t" [class]="mobileMenuClasses()">
+        <a
+          routerLink="/"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="block px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          Início
+        </a>
+        <a
+          routerLink="/produtos"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          class="block px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          Produtos
+        </a>
+        <a
+          routerLink="/categorias"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          class="block px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          Categorias
+        </a>
+        <a
+          routerLink="/ofertas"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          class="block px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          Ofertas
+        </a>
+        <a
+          routerLink="/contato"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          class="block px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          Contato
+        </a>
+
+        <!-- Mobile Search -->
+        <div class="px-3 py-2">
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Buscar produtos..."
+              class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                class="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Wishlist -->
+        <a
+          href="#"
+          class="flex items-center px-3 py-2 rounded-md text-base font-medium transition-all hover:bg-gray-50 hover:translate-x-1"
+          [class]="mobileLinkClasses()"
+          (click)="closeMobileMenu()"
+        >
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          Lista de Desejos
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Spacer to prevent content from hiding behind fixed header -->
+<div [style.height.px]="headerHeight()"></div>

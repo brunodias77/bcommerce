@@ -33,3 +33,20 @@ export interface ValidationErrorResponse {
 export interface ErrorResponse {
   message: string;
 }
+
+/**
+ * Interface para resposta de login de usuário
+ * Baseada na DTO LoginUserResponse do backend
+ */
+export interface LoginUserResponse {
+  /** Token de acesso JWT */
+  accessToken: string;
+  /** Tempo de expiração do token de acesso em segundos */
+  expiresIn: number;
+  /** Tempo de expiração do refresh token em segundos */
+  refreshExpiresIn: number;
+  /** Token de refresh para renovar o access token */
+  refreshToken: string;
+  /** Tipo do token (geralmente 'Bearer') */
+  tokenType: string;
+}
