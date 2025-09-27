@@ -57,7 +57,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
             var userToken = await _context.UserTokens
                 .Include(ut => ut.User)
                 .FirstOrDefaultAsync(ut => ut.TokenValue == request.Token && 
-                                         ut.TokenType == "activation" && 
+                                         ut.TokenType == UserTokenType.EmailVerification && 
                                          ut.RevokedAt == null, 
                                    cancellationToken);
 

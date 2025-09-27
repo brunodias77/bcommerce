@@ -98,6 +98,7 @@ public static class InfraDependencyInjection
         // Serviços de infraestrutura
         services.AddScoped<IPasswordEncripter, PasswordEncripter>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<UserService.Application.Services.ITokenService, UserService.Application.Services.TokenService>();
         // services.AddScoped<IJwtService, JwtService>();
         // services.AddScoped<IPasswordHasher, PasswordHasher>();
         

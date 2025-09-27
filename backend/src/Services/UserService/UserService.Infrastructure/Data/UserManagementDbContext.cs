@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using UserService.Domain.Common;
 using UserService.Domain.Entities;
+using UserService.Domain.Enums;
 
 namespace UserService.Infrastructure.Data;
 
@@ -96,6 +97,18 @@ namespace UserService.Infrastructure.Data;
                 entity.HasIndex(e => e.TokenType);
                 entity.HasIndex(e => e.ExpiresAt);
                 entity.HasIndex(e => e.TokenValue).IsUnique();
+                
+                // Configuração de conversão do enum para string
+                entity.Property(e => e.TokenType)
+                    .HasConversion(
+                        v => v.ToDbString(),
+                        v => UserTokenTypeExtensions.FromDbString(v)
+                    )
+                    .HasMaxLength(50);
+
+                // Configuração do tamanho do campo token_value
+                entity.Property(e => e.TokenValue)
+                    .HasMaxLength(2048);
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Tokens)

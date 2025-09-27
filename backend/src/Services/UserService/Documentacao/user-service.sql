@@ -132,7 +132,7 @@ CREATE TABLE user_tokens (
     token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     token_type VARCHAR(50) NOT NULL, -- 'refresh', 'email_verification', 'password_reset'
-    token_value VARCHAR(256) NOT NULL UNIQUE,
+    token_value VARCHAR(2048) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     revoked_at TIMESTAMPTZ,

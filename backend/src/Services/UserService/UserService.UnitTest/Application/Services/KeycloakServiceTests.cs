@@ -48,7 +48,7 @@ public class KeycloakServiceTests
                 if (uri.Contains("/protocol/openid-connect/token") && request.Method == HttpMethod.Post && uri.Contains("client_id=admin-cli"))
                 {
                     Console.WriteLine("Handling admin token request");
-                    var adminTokenResponse = new LoginResponse(
+                    var adminTokenResponse = new LoginResponseKeycloak(
                         AccessToken: "admin-token-123",
                         ExpiresIn: 3600,
                         RefreshExpiresIn: 7200,
@@ -83,7 +83,7 @@ public class KeycloakServiceTests
                     }
                     
                     Console.WriteLine("Returning successful login response");
-                    var loginResponse = new LoginResponse(
+                    var loginResponse = new LoginResponseKeycloak(
                         AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
                         ExpiresIn: 3600,
                         RefreshExpiresIn: 7200,
@@ -270,7 +270,7 @@ public class KeycloakServiceTests
         var password = "MinhaSenh@123";
         
         // Mock will be handled by the generic setup in constructor
-        var tokenResponse = new LoginResponse(
+        var tokenResponse = new LoginResponseKeycloak(
             AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
             ExpiresIn: 3600,
             RefreshExpiresIn: 7200,
