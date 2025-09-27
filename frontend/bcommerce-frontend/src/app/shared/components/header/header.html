@@ -8,21 +8,14 @@
       <!-- Logo -->
       <div class="flex items-center space-x-2">
         <a routerLink="/" class="flex items-center space-x-2" (click)="scrollToTop()">
-          <div [class]="logoIconClasses()">
-            <span class="text-white font-bold" [class]="logoTextClasses()">D</span>
-          </div>
-          <span class="font-bold" [class]="logoClasses()">DCommerce</span>
+          <img src="assets/logo/logo-bcommerce.png" alt="Logo" class="h-10 w-auto" />
         </a>
       </div>
 
       <!-- Search Bar (Responsive - visible on larger screens when scrolled) -->
       <div [class]="searchBarClasses()">
         <div class="relative w-full">
-          <input
-            type="text"
-            placeholder="Buscar produtos..."
-            [class]="searchInputClasses()"
-          />
+          <input type="text" placeholder="Buscar produtos..." [class]="searchInputClasses()" />
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
               class="w-4 h-4 text-gray-400"
@@ -88,68 +81,32 @@
 
       <!-- User Actions -->
       <div class="flex items-center" [class]="userActionsClasses()">
+        <!-- User Menu -->
+        <button
+          class="relative rounded-lg transition-all hover:scale-105 cursor-pointer"
+          [class]="iconButtonClasses()"
+          title="Minha Conta"
+        >
+          <app-user-icon [width]="48" [height]="48" [color]="'#2d2926'"></app-user-icon>
+        </button>
+
         <!-- Favorites/Wishlist -->
         <button
-          class="relative rounded-lg transition-all hover:scale-105"
+          class="relative rounded-lg transition-all hover:scale-105 cursor-pointer"
           [class]="iconButtonClasses()"
           title="Lista de Desejos"
         >
-          <svg
-            [class]="iconClasses()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            ></path>
-          </svg>
+          <app-heart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-heart-icon>
         </button>
 
         <!-- Cart -->
         <button
-          class="relative rounded-lg transition-all hover:scale-105"
+          class="relative rounded-lg transition-all hover:scale-105 cursor-pointer"
           [class]="iconButtonClasses()"
           title="Carrinho de Compras"
         >
-          <svg
-            [class]="iconClasses()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h12.5M17 13v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6"
-            ></path>
-          </svg>
+          <app-cart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-cart-icon>
           <span [class]="cartBadgeClasses()">{{ cartItemsCount() }}</span>
-        </button>
-
-        <!-- User Menu -->
-        <button
-          class="rounded-lg transition-all hover:scale-105"
-          [class]="iconButtonClasses()"
-          title="Minha Conta"
-        >
-          <svg
-            [class]="iconClasses()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            ></path>
-          </svg>
         </button>
 
         <!-- Mobile Menu Button -->
@@ -261,7 +218,12 @@
           (click)="closeMobileMenu()"
         >
           <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            ></path>
           </svg>
           Lista de Desejos
         </a>

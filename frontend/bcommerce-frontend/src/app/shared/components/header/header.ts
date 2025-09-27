@@ -3,10 +3,13 @@ import { Component, HostListener, signal, OnDestroy, DestroyRef } from '@angular
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, throttleTime } from 'rxjs';
+import { UserIcon } from '../../icons/user-icon/user-icon';
+import { CartIcon } from '../../icons/cart-icon/cart-icon';
+import { HeartIcon } from '../../icons/heart-icon/heart-icon';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, UserIcon, CartIcon, HeartIcon],
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
@@ -15,7 +18,7 @@ export class Header implements OnDestroy {
   isScrolled = signal(false);
   isMobileMenuOpen = signal(false);
   cartItemsCount = signal(3);
-  
+
   private readonly SCROLL_THRESHOLD = 50;
   private readonly SCROLL_THROTTLE_TIME = 16; // ~60fps
 
@@ -30,10 +33,7 @@ export class Header implements OnDestroy {
   private initScrollListener() {
     // Versão otimizada com throttle para melhor performance
     fromEvent(window, 'scroll', { passive: true })
-      .pipe(
-        throttleTime(this.SCROLL_THROTTLE_TIME),
-        takeUntilDestroyed(this.destroyRef)
-      )
+      .pipe(throttleTime(this.SCROLL_THROTTLE_TIME), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.updateScrollState();
       });
@@ -42,7 +42,7 @@ export class Header implements OnDestroy {
   private updateScrollState() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const shouldBeScrolled = scrollTop > this.SCROLL_THRESHOLD;
-    
+
     // Só atualiza se o estado mudou (evita re-renders desnecessários)
     if (this.isScrolled() !== shouldBeScrolled) {
       this.isScrolled.set(shouldBeScrolled);
@@ -97,7 +97,9 @@ export class Header implements OnDestroy {
   }
 
   logoTextClasses() {
-    return this.isScrolled() ? 'text-lg transition-all duration-300' : 'text-xl transition-all duration-300';
+    return this.isScrolled()
+      ? 'text-lg transition-all duration-300'
+      : 'text-xl transition-all duration-300';
   }
 
   logoClasses() {
@@ -119,13 +121,15 @@ export class Header implements OnDestroy {
   }
 
   linkClasses() {
-    return this.isScrolled() 
-      ? 'text-sm text-gray-700 nav-link transition-colors duration-200' 
+    return this.isScrolled()
+      ? 'text-sm text-gray-700 nav-link transition-colors duration-200'
       : 'text-base text-gray-700 nav-link transition-colors duration-200';
   }
 
   userActionsClasses() {
-    return this.isScrolled() ? 'space-x-2 transition-all duration-300' : 'space-x-3 transition-all duration-300';
+    return this.isScrolled()
+      ? 'space-x-2 transition-all duration-300'
+      : 'space-x-3 transition-all duration-300';
   }
 
   iconButtonClasses() {
@@ -135,13 +139,15 @@ export class Header implements OnDestroy {
   }
 
   iconClasses() {
-    return this.isScrolled() ? 'w-5 h-5 transition-all duration-300' : 'w-6 h-6 transition-all duration-300';
+    return this.isScrolled()
+      ? 'w-5 h-5 transition-all duration-300'
+      : 'w-6 h-6 transition-all duration-300';
   }
 
   cartBadgeClasses() {
     return this.isScrolled()
-      ? 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center animate-pulse font-medium transition-all duration-300'
-      : 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse font-medium transition-all duration-300';
+      ? 'absolute -top-1 -right-1 bg-yellow-primary text-black-primary text-xs rounded-full h-4 w-4 flex items-center justify-center animate-pulse font-medium transition-all duration-300'
+      : 'absolute -top-1 -right-1 bg-yellow-primary text-black-primary text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse font-medium transition-all duration-300';
   }
 
   mobileMenuClasses() {

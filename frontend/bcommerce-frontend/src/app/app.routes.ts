@@ -28,6 +28,11 @@ export const routes: Routes = [
     canActivate: [GuestGuard],
   },
   // Rotas protegidas (apenas para usuários autenticados)
-
+  {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/page/profile-page/profile-page').then((m) => m.ProfilePage),
+    canActivate: [AuthGuard],
+  },
   // Rotas administrativas (apenas para admins)
 ];

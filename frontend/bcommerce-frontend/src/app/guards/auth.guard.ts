@@ -8,7 +8,12 @@ import { AuthService } from '../services/auth/auth-service';
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  private readonly isAuthenticated$: Observable<boolean>;
+
+  constructor(private authService: AuthService, private router: Router) {
+    // Converte o signal para Observable no contexto de injeção
+    this.isAuthenticated$ = toObservable(this.authService.isAuthenticated);
+  }
 
   /**
    * Determina se uma rota pode ser ativada verificando se o usuário está autenticado.
@@ -18,7 +23,7 @@ export class AuthGuard implements CanActivate {
    * @returns Observable<boolean | UrlTree> - true se o usuário estiver autenticado, UrlTree para redirecionamento se não autenticado
    */
   canActivate(): Observable<boolean | UrlTree> {
-    return toObservable(this.authService.isAuthenticated).pipe(
+    return this.isAuthenticated$.pipe(
       take(1),
       map(isAuthenticated => {
         // Verifica tanto o status de autenticação quanto a expiração do token

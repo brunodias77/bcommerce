@@ -16,7 +16,12 @@ import { AuthService } from '../services/auth/auth-service';
   providedIn: 'root',
 })
 export class GuestGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  private readonly isAuthenticated$: Observable<boolean>;
+
+  constructor(private authService: AuthService, private router: Router) {
+    // Converte o signal para Observable no contexto de injeção
+    this.isAuthenticated$ = toObservable(this.authService.isAuthenticated);
+  }
 
   /**
    * Determines if a route can be activated by checking if the user is NOT authenticated.
@@ -26,7 +31,7 @@ export class GuestGuard implements CanActivate {
    * @returns Observable<boolean | UrlTree> - true if user is not authenticated, UrlTree for redirect if authenticated
    */
   canActivate(): Observable<boolean | UrlTree> {
-    return toObservable(this.authService.isAuthenticated).pipe(
+    return this.isAuthenticated$.pipe(
       take(1),
       map(isAuthenticated => {
         if (isAuthenticated) {

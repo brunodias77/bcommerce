@@ -1,2 +1,31 @@
 /* You can add global styles to this file, and also import other style files */
 @import 'tailwindcss';
+
+/* Configuração da fonte Inter */
+body {
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+@theme inline {
+  --color-black-primary: #2d2926;
+
+  --color-yellow-primary: #fec857;
+  --color-yellow-secondary: #e0ac3c;
+
+  --color-green-primary: #2dc26e;
+  --color-green-secondary: #3bb77e;
+
+  --color-gray-primary: #7e7e7e;
+  --color-gray-secondary: #b6b6b6;
+  --color-gray-tertiary: #4b5563;
+
+  --color-blue-primary: #253d4e;
+  --color-blue-secondary: #4f5d77;
+
+  --background-image-banner-home: url('/assets/banners/banner-1.png');
+}
+
+.container {
+  @apply mx-auto max-w-[1440px] px-6 py-3 lg:px-12;
+}
