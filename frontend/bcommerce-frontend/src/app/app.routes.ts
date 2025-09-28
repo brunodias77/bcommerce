@@ -44,5 +44,11 @@ export const routes: Routes = [
       import('./features/profile/page/profile-page/profile-page').then((m) => m.ProfilePage),
     canActivate: [AuthGuard],
   },
+  {
+    path: 'favorites',
+    loadComponent: () =>
+      import('./features/profile/page/favorites/favorites').then((m) => m.Favorites),
+    canActivate: [AuthGuard],
+  },
   // Rotas administrativas (apenas para admins)
 ];

@@ -1,1 +1,125 @@
-<p>favorites works!</p>
+<div class="wishlist-container">
+  <!-- Header Section -->
+  <div class="wishlist-header">
+    <h1 class="wishlist-title">Your Wishlist</h1>
+    <p class="wishlist-subtitle">There are {{ productCount }} products in this list</p>
+  </div>
+
+  <!-- Wishlist Content -->
+  <div class="wishlist-content" *ngIf="wishlistProducts.length > 0; else emptyState">
+    <!-- Desktop Table View -->
+    <div class="table-container hidden md:block">
+      <table class="wishlist-table">
+        <thead>
+          <tr class="table-header">
+            <th class="product-column">Product</th>
+            <th class="price-column">Price</th>
+            <th class="stock-column">Stock Status</th>
+            <th class="action-column">Action</th>
+            <th class="remove-column">Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="table-row" *ngFor="let product of wishlistProducts">
+            <!-- Product Column -->
+            <td class="product-cell">
+              <div class="product-info">
+                <img [src]="product.image" [alt]="product.name" class="product-image">
+                <span class="product-name">{{ product.name }}</span>
+              </div>
+            </td>
+            
+            <!-- Price Column -->
+            <td class="price-cell">
+              <span class="product-price">${{ product.price.toFixed(2) }}</span>
+            </td>
+            
+            <!-- Stock Status Column -->
+            <td class="stock-cell">
+              <span class="stock-badge" [ngClass]="{
+                'in-stock': product.stockStatus === 'in-stock',
+                'out-of-stock': product.stockStatus === 'out-of-stock'
+              }">
+                {{ product.stockLabel }}
+              </span>
+            </td>
+            
+            <!-- Action Column -->
+            <td class="action-cell">
+              <button 
+                class="add-to-cart-btn"
+                [ngClass]="{
+                  'available': product.stockStatus === 'in-stock',
+                  'unavailable': product.stockStatus === 'out-of-stock'
+                }"
+                [disabled]="product.stockStatus === 'out-of-stock'"
+                (click)="addToCart(product)">
+                {{ product.stockStatus === 'in-stock' ? 'Add to cart' : 'Contact us' }}
+              </button>
+            </td>
+            
+            <!-- Remove Column -->
+            <td class="remove-cell">
+              <button class="remove-btn" (click)="removeFromWishlist(product.id)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"></path>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="mobile-cards md:hidden">
+      <div class="product-card" *ngFor="let product of wishlistProducts">
+        <div class="card-header">
+          <img [src]="product.image" [alt]="product.name" class="card-image">
+          <div class="card-info">
+            <h3 class="card-title">{{ product.name }}</h3>
+            <p class="card-price">${{ product.price.toFixed(2) }}</p>
+          </div>
+          <button class="card-remove-btn" (click)="removeFromWishlist(product.id)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="card-footer">
+          <span class="card-stock-badge" [ngClass]="{
+            'in-stock': product.stockStatus === 'in-stock',
+            'out-of-stock': product.stockStatus === 'out-of-stock'
+          }">
+            {{ product.stockLabel }}
+          </span>
+          
+          <button 
+            class="card-add-btn"
+            [ngClass]="{
+              'available': product.stockStatus === 'in-stock',
+              'unavailable': product.stockStatus === 'out-of-stock'
+            }"
+            [disabled]="product.stockStatus === 'out-of-stock'"
+            (click)="addToCart(product)">
+            {{ product.stockStatus === 'in-stock' ? 'Add to cart' : 'Contact us' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </div>
+      <h2 class="empty-title">Your wishlist is empty</h2>
+      <p class="empty-description">Start adding products to your wishlist to see them here.</p>
+    </div>
+  </ng-template>
+</div>
