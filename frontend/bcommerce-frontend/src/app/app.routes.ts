@@ -50,5 +50,10 @@ export const routes: Routes = [
       import('./features/profile/page/favorites/favorites').then((m) => m.Favorites),
     canActivate: [AuthGuard],
   },
+  {
+    path: 'cart',
+    loadComponent: () =>
+      import('./features/cart/pages/cart-page/cart-page').then((m) => m.CartPage),
+  },
   // Rotas administrativas (apenas para admins)
 ];

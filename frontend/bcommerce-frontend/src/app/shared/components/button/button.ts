@@ -3,6 +3,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ou
 export type ButtonSize = 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-button',
+  standalone: true,
   imports: [],
   templateUrl: './button.html',
   styleUrl: './button.css',
@@ -33,7 +34,7 @@ export class Button {
         'text-black-primary bg-yellow-primary hover:bg-yellow-secondary focus:ring-yellow-primary',
       secondary: 'text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-gray-500',
       danger: 'text-white bg-red-600 hover:bg-red-700 focus:ring-red-500',
-      success: 'text-white bg-green-600 hover:bg-green-700 focus:ring-green-500',
+      success: 'text-white bg-[#059669] hover:bg-green-700 focus:ring-green-500',
       outline: 'text-gray-700 bg-transparent border-gray-300 hover:bg-gray-50 focus:ring-gray-500',
     };
     return variants[this.variant()];

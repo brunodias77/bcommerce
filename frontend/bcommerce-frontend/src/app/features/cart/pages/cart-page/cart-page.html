@@ -1,0 +1,141 @@
+<div class="cart-page">
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="stepper-container">
+      @for (step of steps(); track step.id) {
+        <div class="step" [class.active]="step.isActive" [class.completed]="step.isCompleted">
+          <div class="step-circle">
+            <span class="step-number">{{ step.id }}</span>
+          </div>
+          <span class="step-label">{{ step.name }}</span>
+        </div>
+        @if (step.id < steps().length) {
+          <div class="step-connector"></div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="cart-content">
+    <!-- Left Side - Products and Coupon -->
+    <div class="left-section">
+      <!-- Products Section -->
+      <div class="products-section">
+        <h2 class="section-title">PRODUTOS</h2>
+        
+        @for (item of cartItems(); track item.id) {
+          <div class="product-item">
+            <div class="product-image">
+              <img [src]="item.image" [alt]="item.name" />
+            </div>
+            <div class="product-details">
+              <div class="product-info">
+                <span class="product-category">{{ item.category }}</span>
+                <h3 class="product-name">{{ item.name }}</h3>
+                <p class="product-description">Adicione no carrinho e venda no PIX</p>
+              </div>
+              <div class="product-actions">
+                <div class="quantity-section">
+                  <label>Quant</label>
+                  <input 
+                    type="number" 
+                    [value]="item.quantity" 
+                    (input)="updateQuantity(item.id, +$any($event.target).value)"
+                    min="1"
+                    class="quantity-input"
+                  />
+                </div>
+                <div class="price-section">
+                  <span class="price-label">Preço à vista no PIX</span>
+                  <span class="price-value">R$ {{ item.price.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+                </div>
+                <app-button 
+                  variant="danger" 
+                  size="sm"
+                  (clicked)="removeItem(item.id)"
+                >
+                  Remover
+                </app-button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Coupon Section -->
+      <div class="coupon-section">
+        <div class="coupon-input-group">
+          <input 
+            type="text" 
+            placeholder="DIGITE SEU CUPOM"
+            [(ngModel)]="couponCode"
+            class="coupon-input"
+          />
+          <app-button 
+            variant="secondary"
+            (clicked)="applyCoupon()"
+          >
+            APLICAR CUPOM
+          </app-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Order Summary -->
+    <div class="right-section">
+      <div class="summary-section">
+        <h2 class="section-title">RESUMO</h2>
+        
+        <div class="summary-item">
+          <span class="summary-label">Valor dos produtos:</span>
+          <span class="summary-value">R$ {{ orderSummary().subtotal.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span class="summary-label">Descontos:</span>
+          <span class="summary-value">R$ {{ orderSummary().discounts.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span class="summary-label">Frete:</span>
+          <span class="summary-value">R$ {{ orderSummary().shipping.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+        </div>
+        
+        <div class="summary-item total-installment">
+          <span class="summary-label">Total à prazo:</span>
+          <div class="total-details">
+            <span class="total-value">R$ {{ orderSummary().totalInstallment.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+            <span class="installment-fee">(10% = R$ {{ orderSummary().installmentFee.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }})</span>
+          </div>
+        </div>
+        
+        <div class="summary-item total-cash">
+          <span class="summary-label">Total à vista no Pix:</span>
+          <div class="cash-details">
+            <span class="cash-value">R$ {{ orderSummary().totalCash.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</span>
+            <span class="savings">(Economia: R$ {{ orderSummary().savings.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }})</span>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <app-button 
+             variant="outline"
+             [fullWidth]="true"
+             (clicked)="continue()"
+           >
+             CONTINUAR
+           </app-button>
+           
+           <app-button 
+             variant="primary"
+             [fullWidth]="true"
+             (clicked)="goBack()"
+           >
+             VOLTAR
+           </app-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

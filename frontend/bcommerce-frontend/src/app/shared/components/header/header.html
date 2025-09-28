@@ -1,5 +1,5 @@
 <header
-  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out  shadow-md "
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out shadow-md"
   [class]="headerClasses()"
 >
   <!-- Container interno que muda com o scroll -->
@@ -97,7 +97,9 @@
           [class]="iconButtonClasses()"
           title="Lista de Desejos"
         >
-          <app-heart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-heart-icon>
+          <a href="/favorites">
+            <app-heart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-heart-icon>
+          </a>
         </button>
 
         <!-- Cart -->
@@ -106,8 +108,10 @@
           [class]="iconButtonClasses()"
           title="Carrinho de Compras"
         >
-          <app-cart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-cart-icon>
-          <span [class]="cartBadgeClasses()">{{ cartItemsCount() }}</span>
+          <a href="/cart">
+            <app-cart-icon [width]="24" [height]="24" [color]="'#2d2926'"></app-cart-icon>
+            <span [class]="cartBadgeClasses()">{{ cartItemsCount() }}</span>
+          </a>
         </button>
 
         <!-- Mobile Menu Button -->

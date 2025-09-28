@@ -46,25 +46,24 @@
             
             <!-- Action Column -->
             <td class="action-cell">
-              <button 
-                class="add-to-cart-btn"
-                [ngClass]="{
-                  'available': product.stockStatus === 'in-stock',
-                  'unavailable': product.stockStatus === 'out-of-stock'
-                }"
+              <app-button 
+                [variant]="product.stockStatus === 'in-stock' ? 'success' : 'secondary'"
                 [disabled]="product.stockStatus === 'out-of-stock'"
-                (click)="addToCart(product)">
+                (clicked)="addToCart(product)">
                 {{ product.stockStatus === 'in-stock' ? 'Add to cart' : 'Contact us' }}
-              </button>
+              </app-button>
             </td>
             
             <!-- Remove Column -->
             <td class="remove-cell">
-              <button class="remove-btn" (click)="removeFromWishlist(product.id)">
+              <app-button 
+                variant="danger" 
+                size="sm" 
+                (clicked)="removeFromWishlist(product.id)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 6L6 18M6 6l12 12"></path>
                 </svg>
-              </button>
+              </app-button>
             </td>
           </tr>
         </tbody>
@@ -80,11 +79,14 @@
             <h3 class="card-title">{{ product.name }}</h3>
             <p class="card-price">${{ product.price.toFixed(2) }}</p>
           </div>
-          <button class="card-remove-btn" (click)="removeFromWishlist(product.id)">
+          <app-button 
+            variant="danger" 
+            size="sm" 
+            (clicked)="removeFromWishlist(product.id)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"></path>
             </svg>
-          </button>
+          </app-button>
         </div>
         
         <div class="card-footer">
@@ -95,16 +97,12 @@
             {{ product.stockLabel }}
           </span>
           
-          <button 
-            class="card-add-btn"
-            [ngClass]="{
-              'available': product.stockStatus === 'in-stock',
-              'unavailable': product.stockStatus === 'out-of-stock'
-            }"
+          <app-button 
+            [variant]="product.stockStatus === 'in-stock' ? 'success' : 'secondary'"
             [disabled]="product.stockStatus === 'out-of-stock'"
-            (click)="addToCart(product)">
+            (clicked)="addToCart(product)">
             {{ product.stockStatus === 'in-stock' ? 'Add to cart' : 'Contact us' }}
-          </button>
+          </app-button>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Button } from '../../../../shared/components/button/button';
 
 export interface WishlistProduct {
   id: number;
@@ -12,7 +13,7 @@ export interface WishlistProduct {
 
 @Component({
   selector: 'app-favorites',
-  imports: [CommonModule],
+  imports: [CommonModule, Button],
   templateUrl: './favorites.html',
   styleUrl: './favorites.css'
 })
