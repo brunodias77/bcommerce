@@ -1,0 +1,59 @@
+/* Estilos específicos para a página de ativação */
+
+/* Animação personalizada para o spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Transições suaves para os estados */
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Hover effects para botões */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Focus states para acessibilidade */
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* Animação de entrada para os cards */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsividade adicional */
+@media (max-width: 480px) {
+  .max-w-md {
+    max-width: 95%;
+  }
+  
+  .p-8 {
+    padding: 1.5rem;
+  }
+}
