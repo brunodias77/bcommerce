@@ -1,5 +1,5 @@
 <header
-  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out bg-white shadow-md"
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out  shadow-md "
   [class]="headerClasses()"
 >
   <!-- Container interno que muda com o scroll -->
@@ -86,6 +86,7 @@
           class="relative rounded-lg transition-all hover:scale-105 cursor-pointer"
           [class]="iconButtonClasses()"
           title="Minha Conta"
+          (click)="onUserButtonClick()"
         >
           <app-user-icon [width]="48" [height]="48" [color]="'#2d2926'"></app-user-icon>
         </button>

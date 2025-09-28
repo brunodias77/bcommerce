@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, signal, OnDestroy, DestroyRef } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, throttleTime } from 'rxjs';
 import { UserIcon } from '../../icons/user-icon/user-icon';
 import { CartIcon } from '../../icons/cart-icon/cart-icon';
 import { HeartIcon } from '../../icons/heart-icon/heart-icon';
+import { AuthService } from '../../../services/auth/auth-service';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
   imports: [CommonModule, RouterModule, UserIcon, CartIcon, HeartIcon],
   templateUrl: './header.html',
   styleUrl: './header.css',
@@ -22,7 +24,11 @@ export class Header implements OnDestroy {
   private readonly SCROLL_THRESHOLD = 50;
   private readonly SCROLL_THROTTLE_TIME = 16; // ~60fps
 
-  constructor(private destroyRef: DestroyRef) {
+  constructor(
+    private destroyRef: DestroyRef,
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.initScrollListener();
   }
 
@@ -76,7 +82,7 @@ export class Header implements OnDestroy {
   // Classes computadas baseadas no estado do scroll
   headerClasses() {
     return this.isScrolled()
-      ? 'left-4 right-4 top-4 rounded-2xl shadow-lg backdrop-blur-md bg-white/95'
+      ? 'left-4 right-4 top-4 rounded-2xl shadow-lg backdrop-blur-md bg-white/70'
       : 'left-0 right-0 top-0 rounded-none shadow-md bg-white';
   }
 
@@ -156,5 +162,13 @@ export class Header implements OnDestroy {
 
   mobileLinkClasses() {
     return 'text-gray-700 transition-colors duration-200';
+  }
+
+  onUserButtonClick() {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/profile']);
+    } else {
+      this.router.navigate(['/login']);
+    }
   }
 }
