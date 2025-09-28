@@ -76,6 +76,23 @@ lerna-debug.log*
 /libpeerconnection.log
 testem.log
 /typings
+__screenshots__/
+
+# Angular specific (frontend project)
+frontend/bcommerce-frontend/dist/
+frontend/bcommerce-frontend/tmp/
+frontend/bcommerce-frontend/out-tsc/
+frontend/bcommerce-frontend/bazel-out/
+frontend/bcommerce-frontend/.angular/
+frontend/bcommerce-frontend/node_modules/
+frontend/bcommerce-frontend/coverage/
+frontend/bcommerce-frontend/.sass-cache/
+frontend/bcommerce-frontend/connect.lock
+frontend/bcommerce-frontend/libpeerconnection.log
+frontend/bcommerce-frontend/testem.log
+frontend/bcommerce-frontend/typings/
+frontend/bcommerce-frontend/__screenshots__/
+frontend/bcommerce-frontend/.history/
 
 # Environment files
 .env

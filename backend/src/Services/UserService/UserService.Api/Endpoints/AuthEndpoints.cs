@@ -9,8 +9,8 @@ using UserService.Application.Commands.Users.ForgetPassword;
 using UserService.Application.Commands.Users.ResetPassword;
 using UserService.Application.Dtos.Requests;
 using UserService.Application.Dtos.Responses;
-using UserService.Application.Services.Interfaces;
 using UserService.Application.Services;
+using UserService.Application.Services.Interfaces;
 using UserService.Domain.Exceptions;
 using UserService.Api.DTOs.Requests;
 
@@ -505,12 +505,11 @@ public static class AuthEndpoints
 
         try
         {
-            logger.LogInformation("Iniciando redefinição de senha com token: {TokenPrefix}", 
-                request.Token?[..Math.Min(10, request.Token.Length)] ?? "N/A");
+            logger.LogInformation("Iniciando redefinição de senha com token: {Token}", request.Token);
 
             // Criar o command
-            var command = new ResetPasswordCommand
-            {
+            var command = new ResetPasswordCommand 
+            { 
                 Token = request.Token!,
                 NewPassword = request.NewPassword!,
                 ConfirmPassword = request.ConfirmPassword!
@@ -523,28 +522,35 @@ public static class AuthEndpoints
             if (result.IsSuccess)
             {
                 logger.LogInformation("Senha redefinida com sucesso");
-                return Results.Ok(result.Value);
+                return Results.Ok(new ResetPasswordResponse(
+                    Success: true,
+                    Message: "Senha redefinida com sucesso! Você já pode fazer login com sua nova senha."
+                ));
             }
 
-            // Tratar diferentes tipos de erro
+            // Tratar diferentes tipos de erro baseado na mensagem
             var errorMessage = result.FirstError;
 
-            if (errorMessage.Contains("inválido") || errorMessage.Contains("não encontrado"))
+            if (errorMessage.Contains("inválido") || errorMessage.Contains("já utilizado"))
             {
-                logger.LogWarning("Token de redefinição inválido ou não encontrado");
+                logger.LogWarning("Token de redefinição inválido ou já utilizado: {Token}", request.Token);
                 return Results.BadRequest(new { Message = errorMessage });
             }
 
             if (errorMessage.Contains("expirado"))
             {
-                logger.LogWarning("Token de redefinição expirado");
-                return Results.BadRequest(new { Message = errorMessage });
+                logger.LogWarning("Token de redefinição expirado: {Token}", request.Token);
+                return Results.Problem(
+                    detail: errorMessage,
+                    statusCode: 410,
+                    title: "Token Expirado"
+                );
             }
 
-            if (errorMessage.Contains("já utilizado"))
+            if (errorMessage.Contains("não encontrado"))
             {
-                logger.LogWarning("Token de redefinição já utilizado");
-                return Results.BadRequest(new { Message = errorMessage });
+                logger.LogWarning("Usuário não encontrado para redefinição de senha: {Token}", request.Token);
+                return Results.NotFound(new { Message = errorMessage });
             }
 
             // Outros erros são tratados como Bad Request
@@ -553,7 +559,7 @@ public static class AuthEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Exceção não tratada no endpoint ResetPassword");
+            logger.LogError(ex, "Exceção não tratada no endpoint ResetPassword para token: {Token}", request?.Token ?? "N/A");
             return Results.Problem(
                 detail: "Erro interno do servidor",
                 statusCode: 500,

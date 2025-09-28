@@ -1,0 +1,165 @@
+/* Transição principal do header */
+.header-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, border-radius, box-shadow, background-color;
+}
+
+/* Efeito glassmorphism para header scrolled */
+.header-scrolled {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Links de navegação com efeito underline animado */
+.nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+}
+
+.nav-link:hover::before,
+.nav-link.router-link-active::before {
+  width: 100%;
+}
+
+/* Efeito hover para ícones */
+.icon-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.icon-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: inherit;
+  transform: scale(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-button:hover::before {
+  transform: scale(1);
+}
+
+.icon-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Animação do badge do carrinho */
+.cart-badge {
+  animation: pulse-custom 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-custom {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Menu mobile com slide effect */
+.mobile-menu {
+  transform: translateY(-10px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu.open {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.mobile-menu-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-menu-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: #2563eb;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-link:hover::before,
+.mobile-menu-link.router-link-active::before {
+  transform: translateX(0);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Search input focus effects */
+.search-input {
+  position: relative;
+}
+
+.search-input:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Logo hover effect */
+.logo-container:hover .logo-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.logo-container:hover .logo-text {
+  color: #2563eb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-scrolled {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+  }
+}
+
+/* Prevent layout shift */
+.header-spacer {
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .header-scrolled {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.2);
+  }
+}
+
+/* Performance optimizations */
+.header-transition,
+.nav-link,
+.icon-button,
+.mobile-menu-link {
+  will-change: transform, opacity, color, background-color;
+}
