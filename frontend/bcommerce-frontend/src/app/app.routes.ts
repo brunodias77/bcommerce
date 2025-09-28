@@ -28,6 +28,18 @@ export const routes: Routes = [
     canActivate: [GuestGuard],
   },
   {
+    path: 'forget-password',
+    loadComponent: () =>
+      import('./features/auth/pages/forget-password-page/forget-password-page').then((m) => m.ForgetPasswordPage),
+    canActivate: [GuestGuard],
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/pages/reset-password-page/reset-password-page').then((m) => m.ResetPasswordPageComponent),
+    canActivate: [GuestGuard],
+  },
+  {
     path: 'confirm-email',
     loadComponent: () =>
       import('./features/auth/pages/confirm-email/confirm-email').then((m) => m.ConfirmEmailComponent),

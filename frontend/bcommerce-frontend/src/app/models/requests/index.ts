@@ -43,3 +43,25 @@ export interface ConfirmEmailRequest {
   /** Código de confirmação recebido por email (máximo 500 caracteres) */
   code: string;
 }
+
+/**
+ * Interface para requisição de esqueci minha senha
+ * Baseada na DTO ForgetPasswordRequest do backend
+ */
+export interface ForgetPasswordRequest {
+  /** Email do usuário que esqueceu a senha (formato válido, máximo 255 caracteres) */
+  email: string;
+}
+
+/**
+ * Interface para requisição de redefinição de senha
+ * Baseada na DTO ResetPasswordRequest do backend
+ */
+export interface ResetPasswordRequest {
+  /** Token de redefinição de senha recebido por email */
+  token: string;
+  /** Nova senha do usuário (mínimo 8 caracteres com maiúscula, minúscula, número e caractere especial) */
+  newPassword: string;
+  /** Confirmação da nova senha */
+  confirmPassword: string;
+}

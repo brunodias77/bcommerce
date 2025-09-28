@@ -7,12 +7,15 @@ import {
   LoginUserResponse,
   ActivateAccountResponse,
   ConfirmEmailResponse,
+  ResetPasswordResponse,
 } from '../../models/responses';
 import {
   CreateUserRequest,
   LoginUserRequest,
   ActivateAccountRequest,
   ConfirmEmailRequest,
+  ForgetPasswordRequest,
+  ResetPasswordRequest,
 } from '../../models/requests';
 
 /**
@@ -34,6 +37,16 @@ export type ActivateState = 'idle' | 'loading' | 'success' | 'error';
  * Estados possíveis da autenticação
  */
 export type AuthState = 'authenticated' | 'unauthenticated' | 'checking';
+
+/**
+ * Estados possíveis do esqueci minha senha
+ */
+export type ForgetPasswordState = 'idle' | 'loading' | 'success' | 'error';
+
+/**
+ * Estados possíveis da redefinição de senha
+ */
+export type ResetPasswordState = 'idle' | 'loading' | 'success' | 'error';
 
 @Injectable({
   providedIn: 'root',
@@ -61,6 +74,17 @@ export class AuthService {
   private readonly _confirmEmailState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   private readonly _confirmEmailError = signal<string | null>(null);
   private readonly _confirmEmailMessage = signal<string | null>(null);
+
+  // Signals para esqueci minha senha
+  private readonly _forgetPasswordState = signal<ForgetPasswordState>('idle');
+  private readonly _forgetPasswordError = signal<string | null>(null);
+  private readonly _forgetPasswordMessage = signal<string | null>(null);
+
+  // Reset Password State
+  private readonly _resetPasswordState = signal<ResetPasswordState>('idle');
+  private readonly _resetPasswordError = signal<string | null>(null);
+  private readonly _resetPasswordValidationErrors = signal<string[]>([]);
+  private readonly _resetPasswordSuccess = signal<boolean>(false);
 
   // Signals para gerenciamento de autenticação
   private readonly _authState = signal<AuthState>('unauthenticated');
@@ -97,6 +121,20 @@ export class AuthService {
   readonly confirmEmailError = computed(() => this._confirmEmailError());
   readonly confirmEmailMessage = computed(() => this._confirmEmailMessage());
   readonly hasConfirmEmailErrors = computed(() => this._confirmEmailState() === 'error');
+
+  // Computed signals para esqueci minha senha
+  readonly isSendingForgetPassword = computed(() => this._forgetPasswordState() === 'loading');
+  readonly forgetPasswordSuccess = computed(() => this._forgetPasswordState() === 'success');
+  readonly forgetPasswordError = computed(() => this._forgetPasswordError());
+  readonly forgetPasswordMessage = computed(() => this._forgetPasswordMessage());
+  readonly hasForgetPasswordErrors = computed(() => this._forgetPasswordState() === 'error');
+
+  // Reset Password computed signals
+  readonly resetPasswordState = this._resetPasswordState.asReadonly();
+  readonly resetPasswordError = this._resetPasswordError.asReadonly();
+  readonly resetPasswordValidationErrors = this._resetPasswordValidationErrors.asReadonly();
+  readonly resetPasswordSuccess = this._resetPasswordSuccess.asReadonly();
+  readonly isResetPasswordLoading = computed(() => this._resetPasswordState() === 'loading');
 
   // Computed signals para estado derivado da autenticação
   readonly isAuthenticated = computed(() => this._authState() === 'authenticated');
@@ -480,6 +518,179 @@ export class AuthService {
   }
 
   /**
+   * Envia solicitação de redefinição de senha
+   * @param request Dados da requisição (email)
+   * @returns Observable com a resposta
+   */
+  forgetPassword(request: ForgetPasswordRequest): Observable<{ message: string }> {
+    // Reset do estado anterior
+    this._forgetPasswordState.set('loading');
+    this._forgetPasswordError.set(null);
+    this._forgetPasswordMessage.set(null);
+
+    return this.http.post<{ message: string }>(`${this.baseUrl}/api/auth/forget-password`, request).pipe(
+      tap((response) => {
+        this._forgetPasswordState.set('success');
+        this._forgetPasswordMessage.set(response.message || 'Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha.');
+      }),
+      catchError((error: HttpErrorResponse) => this.handleForgetPasswordError(error)),
+      finalize(() => {
+        if (this._forgetPasswordState() === 'loading') {
+          this._forgetPasswordState.set('idle');
+        }
+      })
+    );
+  }
+
+  /**
+   * Trata erros específicos do esqueci minha senha
+   * @param error Erro HTTP recebido
+   * @returns Observable com erro tratado
+   */
+  private handleForgetPasswordError(error: HttpErrorResponse): Observable<never> {
+    this._forgetPasswordState.set('error');
+
+    switch (error.status) {
+      case 400:
+        // Erros de validação
+        if (error.error?.message) {
+          this._forgetPasswordError.set(error.error.message);
+        } else {
+          this._forgetPasswordError.set('Email inválido. Verifique o formato e tente novamente.');
+        }
+        break;
+
+      case 500:
+        // Erro interno do servidor
+        this._forgetPasswordError.set('Erro interno do servidor. Tente novamente mais tarde.');
+        break;
+
+      default:
+        // Outros erros
+        this._forgetPasswordError.set('Erro inesperado. Tente novamente mais tarde.');
+        break;
+    }
+
+    return throwError(() => error);
+  }
+
+  /**
+   * Limpa o estado de erro do esqueci minha senha
+   */
+  clearForgetPasswordError(): void {
+    this._forgetPasswordError.set(null);
+    if (this._forgetPasswordState() === 'error') {
+      this._forgetPasswordState.set('idle');
+    }
+  }
+
+  /**
+   * Limpa todos os estados do esqueci minha senha
+   */
+  resetForgetPasswordState(): void {
+    this._forgetPasswordState.set('idle');
+    this._forgetPasswordError.set(null);
+    this._forgetPasswordMessage.set(null);
+  }
+
+  /**
+   * Redefine a senha do usuário usando o token fornecido
+   * @param request Dados da requisição (token, nova senha e confirmação)
+   * @returns Observable com a resposta
+   */
+  resetPassword(request: ResetPasswordRequest): Observable<ResetPasswordResponse> {
+    // Reset do estado anterior
+    this._resetPasswordState.set('loading');
+    this._resetPasswordError.set(null);
+    this._resetPasswordValidationErrors.set([]);
+    this._resetPasswordSuccess.set(false);
+
+    return this.http.post<ResetPasswordResponse>(`${this.baseUrl}/api/auth/reset-password`, request).pipe(
+      tap((response) => {
+        if (response.success) {
+          this._resetPasswordState.set('success');
+          this._resetPasswordSuccess.set(true);
+        } else {
+          this._resetPasswordState.set('error');
+          this._resetPasswordError.set(response.message || 'Erro ao redefinir senha.');
+        }
+      }),
+      catchError((error: HttpErrorResponse) => this.handleResetPasswordError(error)),
+      finalize(() => {
+        if (this._resetPasswordState() === 'loading') {
+          this._resetPasswordState.set('idle');
+        }
+      })
+    );
+  }
+
+  /**
+   * Trata erros específicos da redefinição de senha
+   * @param error Erro HTTP recebido
+   * @returns Observable com erro tratado
+   */
+  private handleResetPasswordError(error: HttpErrorResponse): Observable<never> {
+    this._resetPasswordState.set('error');
+
+    switch (error.status) {
+      case 400:
+        // Erros de validação
+        if (error.error?.errors && Array.isArray(error.error.errors)) {
+          this._resetPasswordValidationErrors.set(error.error.errors);
+          this._resetPasswordError.set('Dados inválidos. Verifique os campos e tente novamente.');
+        } else if (error.error?.message) {
+          this._resetPasswordError.set(error.error.message);
+        } else {
+          this._resetPasswordError.set('Dados inválidos. Verifique os campos e tente novamente.');
+        }
+        break;
+
+      case 401:
+        // Token inválido
+        this._resetPasswordError.set('Token inválido. Solicite um novo link de redefinição de senha.');
+        break;
+
+      case 410:
+        // Token expirado
+        this._resetPasswordError.set('Token expirado. Solicite um novo link de redefinição de senha.');
+        break;
+
+      case 500:
+        // Erro interno do servidor
+        this._resetPasswordError.set('Erro interno do servidor. Tente novamente mais tarde.');
+        break;
+
+      default:
+        // Outros erros
+        this._resetPasswordError.set('Erro inesperado. Tente novamente mais tarde.');
+        break;
+    }
+
+    return throwError(() => error);
+  }
+
+  /**
+   * Limpa o estado de erro da redefinição de senha
+   */
+  clearResetPasswordError(): void {
+    this._resetPasswordError.set(null);
+    this._resetPasswordValidationErrors.set([]);
+    if (this._resetPasswordState() === 'error') {
+      this._resetPasswordState.set('idle');
+    }
+  }
+
+  /**
+   * Limpa todos os estados da redefinição de senha
+   */
+  resetResetPasswordState(): void {
+    this._resetPasswordState.set('idle');
+    this._resetPasswordError.set(null);
+    this._resetPasswordValidationErrors.set([]);
+    this._resetPasswordSuccess.set(false);
+  }
+
+  /**
    * Realiza logout do usuário, limpando tokens e estado
    */
   logout(): void {
@@ -487,6 +698,8 @@ export class AuthService {
     this.resetLoginState();
     this.resetRegisterState();
     this.resetConfirmEmailState();
+    this.resetForgetPasswordState();
+    this.resetResetPasswordState();
   }
 
   /**

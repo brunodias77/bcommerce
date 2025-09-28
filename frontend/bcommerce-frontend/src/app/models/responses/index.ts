@@ -71,3 +71,14 @@ export interface ConfirmEmailResponse {
   /** Mensagem de sucesso ou erro */
   message: string;
 }
+
+/**
+ * Interface para resposta de redefinição de senha
+ * Baseada na DTO ResetPasswordResponse do backend
+ */
+export interface ResetPasswordResponse {
+  /** Indica se a operação foi bem-sucedida */
+  success: boolean;
+  /** Mensagem de sucesso ou erro */
+  message: string;
+}
