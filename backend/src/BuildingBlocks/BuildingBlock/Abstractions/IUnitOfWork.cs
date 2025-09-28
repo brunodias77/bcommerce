@@ -1,6 +1,6 @@
 namespace BuildingBlocks.Abstractions;
 
-public interface IUnitOfWork
+public interface IUnitOfWork : IDisposable
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
